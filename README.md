@@ -73,4 +73,8 @@ Install only missing packages in the server environment:
 pip install -r requirements.txt
 ```
 
+If `AutoProcessor.from_pretrained` reports that `Qwen3VLVideoProcessor`
+requires Torchvision, install a `torchvision` build that matches the existing
+PyTorch/CUDA build in the active environment.
+
 Do not commit downloaded models, datasets, cache directories, or benchmark outputs.

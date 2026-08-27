@@ -63,23 +63,40 @@ def load_model_and_processor(
     """Load a local Qwen-VL style model and processor without downloading."""
     import torch
     import transformers
-    from transformers import AutoProcessor
+    from transformers import AutoConfig, AutoProcessor
 
-    model_class_names = (
-        "Qwen2_5_VLForConditionalGeneration",
-        "Qwen2VLForConditionalGeneration",
+    config = AutoConfig.from_pretrained(
+        model_path,
+        trust_remote_code=True,
+        local_files_only=True,
+    )
+    model_type = str(getattr(config, "model_type", "") or "")
+    architectures = tuple(getattr(config, "architectures", None) or ())
+    model_class_names = [
         "AutoModelForImageTextToText",
         "AutoModelForVision2Seq",
-    )
-    model_class = None
+        "AutoModelForCausalLM",
+    ]
+    if _looks_like_qwen25_vl(model_type, architectures):
+        model_class_names.append("Qwen2_5_VLForConditionalGeneration")
+    if _looks_like_qwen2_vl(model_type, architectures):
+        model_class_names.append("Qwen2VLForConditionalGeneration")
+
+    model_classes = []
     for name in model_class_names:
-        model_class = getattr(transformers, name, None)
-        if model_class is not None:
-            break
-    if model_class is None:
+        candidate = getattr(transformers, name, None)
+        if candidate is not None:
+            model_classes.append((name, candidate))
+    if not model_classes:
         raise RuntimeError(
             "当前 transformers 版本缺少可用的 VLM model class，请在服务器环境安装支持 Qwen-VL 的 transformers。"
         )
+
+    processor = AutoProcessor.from_pretrained(
+        model_path,
+        trust_remote_code=True,
+        local_files_only=True,
+    )
 
     torch_dtype = _resolve_dtype(torch, dtype)
     kwargs: Dict[str, Any] = {
@@ -92,22 +109,38 @@ def load_model_and_processor(
     if attn_implementation:
         kwargs["attn_implementation"] = attn_implementation
 
-    try:
-        model = model_class.from_pretrained(model_path, **kwargs)
-    except Exception:
-        if "attn_implementation" not in kwargs:
-            raise
-        kwargs.pop("attn_implementation", None)
-        model = model_class.from_pretrained(model_path, **kwargs)
+    errors = []
+    model = None
+    for class_name, model_class in model_classes:
+        try:
+            model = model_class.from_pretrained(model_path, config=config, **kwargs)
+            break
+        except Exception as exc:
+            errors.append(f"{class_name}: {type(exc).__name__}: {exc}")
+            if "attn_implementation" not in kwargs:
+                continue
+            retry_kwargs = dict(kwargs)
+            retry_kwargs.pop("attn_implementation", None)
+            try:
+                model = model_class.from_pretrained(model_path, config=config, **retry_kwargs)
+                break
+            except Exception as retry_exc:
+                errors.append(
+                    f"{class_name} without attn_implementation: "
+                    f"{type(retry_exc).__name__}: {retry_exc}"
+                )
+    if model is None:
+        joined_errors = "\n".join(f"- {error}" for error in errors)
+        raise RuntimeError(
+            "无法加载本地多模态模型。"
+            f"config.model_type={model_type!r}, architectures={architectures!r}。\n"
+            "已尝试的 Transformers model class 均失败：\n"
+            f"{joined_errors}"
+        )
 
     if not device_map and device != "auto":
         model = model.to(device)
     model.eval()
-    processor = AutoProcessor.from_pretrained(
-        model_path,
-        trust_remote_code=True,
-        local_files_only=True,
-    )
     return model, processor
 
 
@@ -263,6 +296,16 @@ def _resolve_dtype(torch: Any, dtype: str) -> Any:
     if dtype in {"float32", "fp32"}:
         return torch.float32
     raise ValueError(f"Unsupported dtype: {dtype}")
+
+
+def _looks_like_qwen25_vl(model_type: str, architectures: Tuple[str, ...]) -> bool:
+    values = (model_type, *architectures)
+    return any("qwen2_5_vl" in value.lower() or "qwen2.5vl" in value.lower() for value in values)
+
+
+def _looks_like_qwen2_vl(model_type: str, architectures: Tuple[str, ...]) -> bool:
+    values = (model_type, *architectures)
+    return any("qwen2_vl" in value.lower() or "qwen2vl" in value.lower() for value in values)
 
 
 def _input_device(model: Any, device: str) -> Optional[Any]:
