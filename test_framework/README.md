@@ -47,6 +47,32 @@ python3 benchmark_runner.py \
 
 手机 action prompt 统一维护在 `phone_prompt.py`。支持 `tap`、`swipe`、`type`、`back`、`home`、`wait`、`complete` 和 `impossible`，坐标使用整屏 `0-1000` 归一化整数。
 
+## 静态图片 HuggingFace baseline
+
+仓库根目录新增了不依赖 ADB/vLLM 服务的静态 baseline。它复用本目录的 `phone_prompt.py` 和 `benchmark_runner.parse_action`，但通过 HuggingFace/Transformers 直接加载本地多模态模型。
+
+单张截图：
+
+```bash
+python test_single_image.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --image xxx.png \
+  --instruction "打开设置并进入 WLAN"
+```
+
+小批量 JSON/JSONL：
+
+```bash
+python test_gui_benchmark.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --samples data/gui/small_eval.jsonl \
+  --data_dir data/gui \
+  --output outputs/gui_benchmark/qwen38_baseline.jsonl \
+  --limit 20
+```
+
+本地无模型时可用 `--mock_response @mock_response.json` 做 prompt、action parser 和输出落盘的静态检查，`mock_response.json` 内容例如 `{"action":"wait","seconds":2}`。
+
 主要输出包括：
 
 - 每个任务目录中的 `metadata.json`、`steps.jsonl`、逐步截图、`final.png` 和 `done.json`
@@ -73,4 +99,3 @@ scripts/start_review_console.sh
 ```
 
 默认打开 `http://127.0.0.1:8765`。审阅结果独立写入 `outputs/qwen38_gui_dev_annotated_full_v2_20260821/review_annotations.json`，不会修改原始任务、截图和时延文件。
-

@@ -1,0 +1,28 @@
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Local model and dataset directories
+models/
+model/
+data/
+datasets/
+cache/
+.cache/
+hf_cache/
+huggingface/
+
+# Experiment outputs
+outputs/
+test_framework/outputs/
+runs/
+logs/
+*.jsonl.tmp
+
+# Large checkpoints and tensor artifacts
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx
