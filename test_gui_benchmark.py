@@ -37,7 +37,7 @@ def first_value(item: Dict[str, Any], keys: Iterable[str]) -> Optional[Any]:
 def iter_json_records(path: Path) -> List[Dict[str, Any]]:
     if path.suffix.lower() == ".jsonl":
         records = []
-        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for line_no, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
             if not line.strip():
                 continue
             item = json.loads(line)
@@ -47,7 +47,7 @@ def iter_json_records(path: Path) -> List[Dict[str, Any]]:
         return records
 
     if path.suffix.lower() == ".json":
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
         if isinstance(data, list):
             return [item for item in data if isinstance(item, dict)]
         if isinstance(data, dict):
@@ -82,6 +82,9 @@ def normalize_record(item: Dict[str, Any], index: int, data_dir: Path) -> Dict[s
         "image_path": image_path,
         "history": history,
         "low_level": item.get("low_level") or item.get("low-level") or item.get("sop"),
+        "goal": item.get("goal"),
+        "step_instruction": item.get("step_instruction"),
+        "expected_action": item.get("expected_action") or item.get("action"),
         "source": item,
     }
 
@@ -139,6 +142,9 @@ def main() -> int:
                     "sample_id": sample["sample_id"],
                     "instruction": sample["instruction"],
                     "image_path": str(image_path),
+                    "goal": sample["goal"],
+                    "step_instruction": sample["step_instruction"],
+                    "expected_action": sample["expected_action"],
                     "status": "error",
                     "error": f"image not found: {image_path}",
                 }
@@ -167,6 +173,9 @@ def main() -> int:
                         "sample_id": sample["sample_id"],
                         "instruction": sample["instruction"],
                         "image_path": str(image_path),
+                        "goal": sample["goal"],
+                        "step_instruction": sample["step_instruction"],
+                        "expected_action": sample["expected_action"],
                         "raw_response": result.raw_response,
                         "parsed_action": result.parsed_action,
                         "latency_seconds": result.latency_seconds,
@@ -179,6 +188,9 @@ def main() -> int:
                         "sample_id": sample["sample_id"],
                         "instruction": sample["instruction"],
                         "image_path": str(image_path),
+                        "goal": sample["goal"],
+                        "step_instruction": sample["step_instruction"],
+                        "expected_action": sample["expected_action"],
                         "status": "error",
                         "error": str(exc),
                     }

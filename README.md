@@ -65,6 +65,43 @@ The benchmark writes one JSON object per line with `sample_id`, `instruction`,
 `image_path`, `raw_response`, `parsed_action`, `latency_seconds`, and token counts
 when available.
 
+## AndroidControl Smoke Run
+
+For a processed AndroidControl JSON/JSONL annotation file plus its image root:
+
+```bash
+python scripts/prepare_androidcontrol_jsonl.py \
+  --input /path/to/androidcontrol_steps.jsonl \
+  --output data/androidcontrol/smoke_5.jsonl \
+  --limit 5 \
+  --coordinate_mode pixel
+
+python test_gui_benchmark.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --samples data/androidcontrol/smoke_5.jsonl \
+  --data_dir /path/to/AndroidControl \
+  --output outputs/androidcontrol_smoke/qwen38_baseline_results.jsonl \
+  --limit 5 \
+  --max_new_tokens 128 \
+  --device auto
+```
+
+Or use the wrapper:
+
+```bash
+ANDROIDCONTROL_JSON=/path/to/androidcontrol_steps.jsonl \
+ANDROIDCONTROL_DATA_DIR=/path/to/AndroidControl \
+LIMIT=5 \
+bash scripts/run_androidcontrol_smoke.sh
+```
+
+`ANDROIDCONTROL_JSON` should point to a processed AndroidControl annotation file,
+for example `steps.jsonl` or a LLaMA-Factory style JSON. `ANDROIDCONTROL_DATA_DIR`
+is the image root used to resolve relative paths such as `images/episode_0/step_0.png`.
+The default `--coordinate_mode pixel` converts AndroidControl pixel coordinates
+to this project's 0-1000 action coordinate system; use `normalized_1000` only if
+the source file already stores 0-1000 coordinates.
+
 ## Dependency Notes
 
 Install only missing packages in the server environment:
