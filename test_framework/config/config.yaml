@@ -1,0 +1,21 @@
+{
+  "use_rag": false,
+  "eval_sample_mode": "sequential",
+  "max_steps": 2,
+  "eval_nums": 1,
+  "policy_lm": null,
+  "embedding_model": null,
+  "rag_database_path": "./rag_database",
+  "max_new_tokens": 128,
+  "use_lora": false,
+  "do_sample": false,
+  "assets_path": ".",
+  "save_path": "./outputs/evaluation",
+  "json_name": "data.json",
+  "device": {
+    "transport": "auto",
+    "serial": null,
+    "ssh_host": "127.0.0.1",
+    "ssh_port": 2222
+  }
+}

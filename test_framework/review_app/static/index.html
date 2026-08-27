@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>GUI Dev Review Bench</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#task-list">跳到任务列表</a>
+    <a class="skip-link" href="#evidence">跳到截图证据</a>
+    <a class="skip-link" href="#review-panel">跳到人工判定</a>
+
+    <div id="app" class="app-shell" aria-busy="true">
+      <header class="utility-bar">
+        <button id="open-tasks" class="text-button mobile-only" type="button">任务列表</button>
+        <div class="brand-block">
+          <span class="eyebrow">GUI DEV</span>
+          <strong>Review Bench</strong>
+        </div>
+        <div class="dataset-block">
+          <span id="dataset-name">正在读取数据集…</span>
+          <span id="dataset-path" class="subtle"></span>
+        </div>
+        <div id="progress-summary" class="progress-summary" aria-live="polite"></div>
+        <button id="jump-review" class="text-button compact-only" type="button">人工判定</button>
+      </header>
+
+      <div id="fatal-state" class="fatal-state" hidden></div>
+      <div id="annotation-warning" class="warning-banner" role="alert" hidden></div>
+
+      <main class="workspace">
+        <aside id="task-rail" class="task-rail" aria-label="任务列表">
+          <div class="rail-head">
+            <div class="rail-title-row">
+              <h1>任务队列</h1>
+              <button id="close-tasks" class="text-button mobile-only" type="button">关闭</button>
+            </div>
+            <label class="search-control">
+              <span>搜索任务</span>
+              <input id="search" type="search" placeholder="ID / APP / 任务文本" autocomplete="off">
+              <kbd>/</kbd>
+            </label>
+            <div id="filters" class="filter-row" role="radiogroup" aria-label="按判定状态筛选">
+              <button class="filter-chip active" type="button" data-filter="all" role="radio" aria-checked="true">全部</button>
+              <button class="filter-chip" type="button" data-filter="unreviewed" role="radio" aria-checked="false">未审阅</button>
+              <button class="filter-chip" type="button" data-filter="correct" role="radio" aria-checked="false">正确</button>
+              <button class="filter-chip" type="button" data-filter="incorrect" role="radio" aria-checked="false">未正确</button>
+            </div>
+          </div>
+          <div id="task-list" class="task-list" tabindex="-1" aria-label="测评任务"></div>
+          <div id="task-empty" class="empty-state" hidden>
+            <strong>没有匹配任务</strong>
+            <p>请清空搜索词或切换筛选条件。</p>
+          </div>
+        </aside>
+        <button id="drawer-backdrop" class="drawer-backdrop" type="button" aria-label="关闭任务列表" hidden></button>
+
+        <section id="evidence" class="evidence-stage" tabindex="-1" aria-labelledby="evidence-title">
+          <header class="stage-head audit-spine">
+            <div>
+              <span class="eyebrow">ACTIVE TASK</span>
+              <h2 id="evidence-title">等待任务数据</h2>
+            </div>
+            <div class="frame-status">
+              <span id="action-label" class="action-label">—</span>
+              <span id="frame-counter" class="mono">00 / 00</span>
+              <button id="prev-frame" class="text-button" type="button" title="上一张截图（左方向键）">上一帧</button>
+              <button id="next-frame" class="text-button" type="button" title="下一张截图（右方向键）">下一帧</button>
+            </div>
+          </header>
+
+          <div id="image-well" class="image-well">
+            <img id="main-image" alt="" hidden>
+            <div id="image-placeholder" class="image-placeholder">正在加载截图…</div>
+          </div>
+          <div id="capture-badge" class="capture-badge" hidden>安全页面占位截图</div>
+          <div id="contact-sheet" class="contact-sheet" aria-label="任务截图帧"></div>
+
+          <section class="evidence-details" aria-labelledby="step-evidence-title">
+            <div class="section-heading">
+              <h3 id="step-evidence-title">步骤证据</h3>
+              <span id="step-time" class="subtle mono"></span>
+            </div>
+            <div class="evidence-grid">
+              <div class="action-block">
+                <span class="field-label">ACTION JSON</span>
+                <pre id="action-json">—</pre>
+              </div>
+              <dl id="timing-list" class="timing-list"></dl>
+            </div>
+          </section>
+        </section>
+
+        <aside id="review-panel" class="review-panel" tabindex="-1" aria-labelledby="review-title">
+          <div class="inspector-head audit-spine">
+            <span class="eyebrow">HUMAN REVIEW</span>
+            <h2 id="review-title">人工判定</h2>
+            <p id="task-text" class="task-instruction">选择一个任务开始审阅。</p>
+          </div>
+          <dl id="task-metadata" class="metadata-list"></dl>
+          <section class="sop-section">
+            <h3>预期 SOP</h3>
+            <p id="task-sop">—</p>
+          </section>
+
+          <form id="review-form">
+            <fieldset id="verdict-group" class="verdict-group">
+              <legend>该任务是否正确完成？</legend>
+              <label><input type="radio" name="verdict" value="unreviewed"><span>未审阅</span></label>
+              <label><input type="radio" name="verdict" value="correct"><span>正确完成</span></label>
+              <label><input type="radio" name="verdict" value="incorrect"><span>未正确完成</span></label>
+            </fieldset>
+            <div id="note-field" class="note-field" hidden>
+              <label for="review-note">问题备注 <span class="subtle">（建议填写）</span></label>
+              <textarea id="review-note" rows="6" placeholder="例如：第 3 步滑动未生效，最终停留在首页。"></textarea>
+            </div>
+            <div class="review-actions">
+              <button id="save-review" class="primary-button" type="submit">保存标注</button>
+              <span id="save-status" class="save-status" role="status" aria-live="polite">尚未修改</span>
+            </div>
+          </form>
+          <div class="task-nav">
+            <button id="prev-task" class="text-button" type="button" title="上一任务（K）">上一任务</button>
+            <button id="next-task" class="text-button" type="button" title="下一任务（J）">下一任务</button>
+          </div>
+          <p class="shortcut-help"><kbd>J</kbd>/<kbd>K</kbd> 任务　<kbd>←</kbd>/<kbd>→</kbd> 截图　<kbd>C</kbd> 正确　<kbd>X</kbd> 未正确　<kbd>⌘/Ctrl</kbd>+<kbd>Enter</kbd> 保存</p>
+        </aside>
+      </main>
+    </div>
+    <div id="toast" class="toast" role="alert" hidden></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

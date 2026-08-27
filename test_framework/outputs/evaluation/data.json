@@ -1,0 +1,14 @@
+[
+    {
+        "task": "改为舒适驾驶模式",
+        "image_path": "./outputs/evaluation/images/改为舒适驾驶模式_1787228768.9681878_0.png",
+        "previous_actions": [],
+        "image_paths": [],
+        "low-level": [],
+        "action": "",
+        "success": false,
+        "input_token_count": 0,
+        "output_token_count": 0,
+        "latency": 2.86102294921875e-06
+    }
+]
