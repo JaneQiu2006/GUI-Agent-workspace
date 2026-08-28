@@ -1,0 +1,2 @@
+# Required only for scripts/prepare_androidcontrol.py.
+tensorflow-cpu

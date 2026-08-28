@@ -67,40 +67,35 @@ when available.
 
 ## AndroidControl Smoke Run
 
-For a processed AndroidControl JSON/JSONL annotation file plus its image root:
+For the raw AndroidControl GZIP TFRecord shard available on Jupiter:
 
 ```bash
-python scripts/prepare_androidcontrol_jsonl.py \
-  --input /path/to/androidcontrol_steps.jsonl \
-  --output data/androidcontrol/smoke_5.jsonl \
-  --limit 5 \
-  --coordinate_mode pixel
+python scripts/prepare_androidcontrol.py \
+  --input data/raw/android_control/android_control-00000-of-00020 \
+  --output_dir data/androidcontrol_mini \
+  --num_episodes 10
 
-python test_gui_benchmark.py \
+CUDA_VISIBLE_DEVICES=0,1 python scripts/eval_androidcontrol.py \
   --model_path /data2/home/models/Qwen3.8-27B \
-  --samples data/androidcontrol/smoke_5.jsonl \
-  --data_dir /path/to/AndroidControl \
-  --output outputs/androidcontrol_smoke/qwen38_baseline_results.jsonl \
-  --limit 5 \
-  --max_new_tokens 128 \
-  --device auto
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/qwen_androidcontrol_mini.json
 ```
 
-Or use the wrapper:
+The preprocessor saves screenshots under `data/androidcontrol_mini/images/` and
+metadata under `data/androidcontrol_mini/test.json`.  It expects the official
+AndroidControl TFRecord fields `episode_id`, `goal`, `screenshots`,
+`screenshot_widths`, `screenshot_heights`, `actions`, and `step_instructions`.
+Remote first run should verify these field names against the local shard.
+
+If TensorFlow is missing during preprocessing, install only the optional TFRecord
+reader dependency:
 
 ```bash
-ANDROIDCONTROL_JSON=/path/to/androidcontrol_steps.jsonl \
-ANDROIDCONTROL_DATA_DIR=/path/to/AndroidControl \
-LIMIT=5 \
-bash scripts/run_androidcontrol_smoke.sh
+pip install -r requirements-androidcontrol.txt
 ```
 
-`ANDROIDCONTROL_JSON` should point to a processed AndroidControl annotation file,
-for example `steps.jsonl` or a LLaMA-Factory style JSON. `ANDROIDCONTROL_DATA_DIR`
-is the image root used to resolve relative paths such as `images/episode_0/step_0.png`.
-The default `--coordinate_mode pixel` converts AndroidControl pixel coordinates
-to this project's 0-1000 action coordinate system; use `normalized_1000` only if
-the source file already stores 0-1000 coordinates.
+For already processed AndroidControl JSON/JSONL files, keep using
+`scripts/prepare_androidcontrol_jsonl.py` and `test_gui_benchmark.py`.
 
 ## Dependency Notes
 
