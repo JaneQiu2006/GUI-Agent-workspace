@@ -15,7 +15,7 @@ huggingface/
 # Experiment outputs
 outputs/
 test_framework/outputs/
-results/
+# results/
 runs/
 logs/
 *.jsonl.tmp
