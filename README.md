@@ -133,6 +133,35 @@ The profile JSON reports stage timings for `build_prompt`,
 `input_to_device`, `generate`, `decode`, and `postprocess`, plus token counts
 and best-effort CUDA peak memory snapshots.
 
+## Acceleration Experiments
+
+Run the full experiment matrix from the repository root on Jupiter:
+
+```bash
+python scripts/run_accel_experiments.py \
+  --gpus 0,1 \
+  --resume
+```
+
+`--gpus` sets `CUDA_VISIBLE_DEVICES` for child commands.  If omitted, the
+launcher uses the current environment, so this is equivalent:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python scripts/run_accel_experiments.py --resume
+```
+
+Useful subsets:
+
+```bash
+python scripts/run_accel_experiments.py --gpus 0,1 --experiments E00-E03 --resume
+python scripts/run_accel_experiments.py --gpus 0,1 --experiments E04,E05,E06 --resume
+```
+
+Each experiment writes to `results/accel/<experiment_id>/` with `eval.json`,
+`profile.json`, `run_metadata.json`, `stdout.log`, and `stderr.log`.  Existing
+successful experiments are skipped with `--resume`; incomplete or failed
+directories are not overwritten and get a `_rerunN` suffix.
+
 ## Dependency Notes
 
 Install only missing packages in the server environment:

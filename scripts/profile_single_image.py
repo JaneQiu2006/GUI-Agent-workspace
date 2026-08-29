@@ -17,6 +17,7 @@ if str(TEST_FRAMEWORK) not in sys.path:
 
 from hf_gui_baseline import (
     DEFAULT_MODEL_PATH,
+    VISION_TOKEN_MODES,
     gpu_memory_snapshot,
     load_model_and_processor,
     profile_infer_one,
@@ -57,6 +58,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device_map", default="auto")
     parser.add_argument("--dtype", default="auto", choices=("auto", "float16", "fp16", "bfloat16", "bf16", "float32", "fp32"))
     parser.add_argument("--attn_implementation", default=None)
+    parser.add_argument("--visual_token_mode", default="default", choices=tuple(VISION_TOKEN_MODES))
+    parser.add_argument("--min_pixels", type=int)
+    parser.add_argument("--max_pixels", type=int)
     return parser
 
 
@@ -84,6 +88,9 @@ def main() -> int:
             args.instruction,
             max_new_tokens=args.max_new_tokens,
             device=args.device,
+            visual_token_mode=args.visual_token_mode,
+            min_pixels=args.min_pixels,
+            max_pixels=args.max_pixels,
         )
 
     warnings = reset_gpu_memory_stats()
@@ -100,6 +107,9 @@ def main() -> int:
             args.instruction,
             max_new_tokens=args.max_new_tokens,
             device=args.device,
+            visual_token_mode=args.visual_token_mode,
+            min_pixels=args.min_pixels,
+            max_pixels=args.max_pixels,
         )
         runs.append(
             {
@@ -127,6 +137,9 @@ def main() -> int:
             "device_map": args.device_map,
             "dtype": args.dtype,
             "attn_implementation": args.attn_implementation,
+            "visual_token_mode": args.visual_token_mode,
+            "min_pixels": args.min_pixels,
+            "max_pixels": args.max_pixels,
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
         "load_seconds": load_seconds,

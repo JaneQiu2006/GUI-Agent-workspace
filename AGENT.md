@@ -35,10 +35,10 @@ git pull
 
 ## Current GUI Agent Baseline Context
 
-As of 2026-08-29, the repository has a minimal static GUI Agent baseline for
-AndroidControl. Local Windows has no model, no raw AndroidControl shard, and no
-GPU, so local validation is limited to syntax/import/help checks. Remote
-validation happens on Jupiter.
+As of 2026-08-29 21:50 CST, the repository has a calibrated static GUI Agent
+baseline for AndroidControl. Local Windows has no model, no raw AndroidControl
+shard, and no GPU, so local validation is limited to syntax/import/help checks.
+Remote validation happens on Jupiter.
 
 Core code:
 - `test_framework/hf_gui_baseline.py`: HuggingFace Qwen3.8 static inference
@@ -58,7 +58,7 @@ Core code:
 - `test_framework/phone_prompt.py`: shared GUI prompt/action contract from the
   original test framework.
 
-Remote commands used for the current baseline:
+Remote commands used for the calibrated baseline:
 
 ```bash
 python scripts/prepare_androidcontrol.py \
@@ -89,46 +89,66 @@ CUDA_VISIBLE_DEVICES=0,1 python scripts/profile_androidcontrol.py \
   --max_new_tokens 128
 ```
 
-Current baseline results from `results/qwen_androidcontrol_mini.json`:
+Current calibrated results from `results/qwen_androidcontrol_mini.json`
+generated at 2026-08-29 21:45 CST:
 - 10 trajectories, 51 steps.
-- type accuracy: 64.71%.
-- step success rate: 41.18%.
-- trajectory success rate: 0.00%.
-- average latency: 14.62 seconds/step.
-- average output tokens: 101.20.
-- peak GPU memory: GPU0 25.08 GB, GPU1 28.33 GB.
-- Filtering out `OPEN_APP` and `WAIT`, ordinary GUI steps have type accuracy
-  83.78% and step success rate 51.35%.
+- strict type accuracy: 80.39%.
+- strict step success rate: 74.51%.
+- strict trajectory success rate: 40.00%.
+- primary metric view: `gui_only`.
+- `gui_only` type accuracy: 97.30%.
+- `gui_only` step success rate: 91.89%.
+- `gui_only` trajectory success rate: 80.00%.
+- `transition_or_noop` (`OPEN_APP` + `WAIT`) step success rate: 28.57%.
+- average latency: 4.62 seconds/step.
+- average output tokens: 19.94.
+- peak GPU memory: GPU0 25.14 GB, GPU1 28.39 GB.
 
-Current profiling results:
-- AndroidControl mini profile over 5 steps: total mean 10.54s, generate mean
-  10.38s, generate share 98.50%, average output tokens 79.0.
+Current profiling results from `results/profile_androidcontrol_mini.json`
+generated at 2026-08-29 21:45 CST:
+- AndroidControl mini profile over 5 steps: total mean 3.41s, generate mean
+  3.25s, generate share 95.18%, average output tokens 13.2.
 - Single image profile over 3 repeats: total mean 9.17s, generate mean 8.97s,
-  generate share 97.89%, average output tokens 60.0.
-- Vision preprocessing is about 0.10-0.13s and is not the main bottleneck.
+  generate share 97.89%, average output tokens 60.0. This file was not rerun
+  after the latest calibration.
+- Vision preprocessing is about 0.10s and is not the main bottleneck.
+
+Resolved calibration issues:
+- Thinking/long output is resolved for AndroidControl mini: 0/51 outputs contain
+  `</think>`, 0/51 hit `max_new_tokens=128`, and average output tokens are about
+  20.
+- Malformed JSON no longer creates UNKNOWN predictions in the latest eval:
+  `pred_type == UNKNOWN` is 0/51.
+- `SCROLL[UP/DOWN]` direction is calibrated to AndroidControl content/page
+  direction instead of finger movement direction; SCROLL step success is 7/7.
+- `OPEN_APP` and `WAIT` are separated from ordinary GUI actions via metric
+  views: `strict`, `gui_only`, `transition_or_noop`, `open_app`, `wait`, and
+  `by_gt_type`.
 
 Known issues before acceleration work:
-- Model outputs are too long. 44/51 eval outputs contain `</think>`, and 12/51
-  hit `max_new_tokens=128`, causing invalid/UNKNOWN parsed actions and inflated
-  latency.
-- `OPEN_APP` from AndroidControl is not directly comparable to the current GUI
-  action space, which mostly contains tap/swipe/type/back/home/wait.
-- `SCROLL[UP/DOWN]` direction likely needs calibration: AndroidControl appears
-  to use page/content direction, while current prediction canonicalization
-  infers finger movement direction.
-- `WAIT` is noisy for static single-frame evaluation and should be reported
-  separately.
+- `WAIT` is noisy for static single-frame evaluation and should continue to be
+  reported separately.
+- `OPEN_APP` is an environment-level action and should continue to be reported
+  separately from ordinary GUI actions.
+- `LONG_PRESS` has only one sample and currently fails; decide whether to add it
+  to the action contract or exclude it from the primary GUI-only view.
+- A small number of CLICK failures remain coordinate-localization errors.
 - GPU memory collection is best-effort; CUDA reset/read failures are warnings,
   not evaluation blockers.
 
-Current analysis document:
+Current analysis documents:
 - `docs/2026-08-29_androidcontrol_baseline_analysis.md`
+- `docs/2026-08-29_androidcontrol_calibration_rerun_analysis.md`
+- `docs/2026-08-29_inference_acceleration_experiment_plan.md`
 
 Recommended next work:
-- First fix output format and disable/avoid thinking so action outputs are
-  short and parseable; then re-run eval/profile.
-- Add strict and gui-only metric views, with `OPEN_APP` and `WAIT` separated.
-- Calibrate `SCROLL[UP/DOWN]` against AndroidControl semantics.
-- Only after metric/prompt calibration, compare acceleration methods such as
-  lower `max_new_tokens`, FlashAttention/SDPA config, vLLM/SGLang serving,
-  BF16/FP16/quantization, and static batching.
+- Start inference acceleration experiments using
+  `docs/2026-08-29_inference_acceleration_experiment_plan.md`.
+- First run `E00-E03` to choose the lowest safe `max_new_tokens` cap.
+- Then compare attention and dtype options (`sdpa`, `flash_attention_2`,
+  `bfloat16`, `float16`) using the selected decode cap.
+- Only after accuracy is stable, evaluate visual-token reduction, static
+  batching, and serving backends.
+- Every experiment must fully record `strict`, `gui_only`,
+  `transition_or_noop`, `open_app`, `wait`, and `by_gt_type` metrics, plus
+  output-health, latency/profile, and memory/resource metrics.

@@ -17,12 +17,20 @@ for path in (TEST_FRAMEWORK, SCRIPT_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from androidcontrol_actions import action_type, actions_match, canonicalize_action
-from eval_androidcontrol import build_metric_views, load_samples, metric_group_for_type, metric_view_policy
+from eval_androidcontrol import (
+    build_metric_views,
+    detail_from_result,
+    load_samples,
+    metric_view_policy,
+    resolved_image_path,
+    summarize_output_health,
+)
 from hf_gui_baseline import (
     DEFAULT_MODEL_PATH,
+    VISION_TOKEN_MODES,
     gpu_memory_snapshot,
     load_model_and_processor,
+    profile_infer_batch,
     profile_infer_one,
     reset_gpu_memory_stats,
 )
@@ -66,6 +74,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device_map", default="auto")
     parser.add_argument("--dtype", default="auto", choices=("auto", "float16", "fp16", "bfloat16", "bf16", "float32", "fp32"))
     parser.add_argument("--attn_implementation", default=None)
+    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--visual_token_mode", default="default", choices=tuple(VISION_TOKEN_MODES))
+    parser.add_argument("--min_pixels", type=int)
+    parser.add_argument("--max_pixels", type=int)
     parser.add_argument("--point_tolerance", type=float, default=100.0)
     return parser
 
@@ -90,73 +102,100 @@ def main() -> int:
     load_seconds = time.perf_counter() - load_started
 
     warmup_records = records[: max(0, args.warmup)]
-    for index, sample in enumerate(warmup_records, 1):
-        image_path = Path(str(sample["image_path"]))
-        if not image_path.is_absolute():
-            image_path = data_dir / image_path
-        print(f"WARMUP {index}/{len(warmup_records)} image={image_path}", flush=True)
-        profile_infer_one(
-            model,
-            processor,
-            image_path,
-            str(sample["task"]),
-            max_new_tokens=args.max_new_tokens,
-            device=args.device,
-        )
+    for start in range(0, len(warmup_records), max(1, args.batch_size)):
+        chunk = warmup_records[start:start + max(1, args.batch_size)]
+        image_paths = [resolved_image_path(sample, data_dir) for sample in chunk]
+        print(f"WARMUP {start + 1}/{len(warmup_records)} batch={len(chunk)}", flush=True)
+        if len(chunk) == 1:
+            profile_infer_one(
+                model,
+                processor,
+                image_paths[0],
+                str(chunk[0]["task"]),
+                max_new_tokens=args.max_new_tokens,
+                device=args.device,
+                visual_token_mode=args.visual_token_mode,
+                min_pixels=args.min_pixels,
+                max_pixels=args.max_pixels,
+            )
+        else:
+            profile_infer_batch(
+                model,
+                processor,
+                [
+                    (image_path, str(sample["task"]), None, None)
+                    for sample, image_path in zip(chunk, image_paths)
+                ],
+                max_new_tokens=args.max_new_tokens,
+                device=args.device,
+                visual_token_mode=args.visual_token_mode,
+                min_pixels=args.min_pixels,
+                max_pixels=args.max_pixels,
+            )
 
     warnings = reset_gpu_memory_stats()
     for warning in warnings:
         print(f"GPU_MEMORY_WARNING {warning}", file=sys.stderr, flush=True)
 
     details = []
-    for index, sample in enumerate(records, 1):
-        image_path = Path(str(sample["image_path"]))
-        if not image_path.is_absolute():
-            image_path = data_dir / image_path
-        gt_action = str(sample["action"])
-        result = profile_infer_one(
-            model,
-            processor,
-            image_path,
-            str(sample["task"]),
-            max_new_tokens=args.max_new_tokens,
-            device=args.device,
-        )
-        pred_action = canonicalize_action(result.raw_response)
-        pred_type = action_type(pred_action)
-        gt_type = action_type(gt_action)
-        type_ok = pred_type == gt_type
-        step_ok = actions_match(pred_action, gt_action, point_tolerance=args.point_tolerance)
-        metric_group = metric_group_for_type(gt_type)
-        details.append(
-            {
-                "episode_id": sample.get("episode_id"),
-                "step_id": sample.get("step_id"),
-                "task": sample.get("task"),
-                "image_path": str(image_path),
-                "gt_action": gt_action,
-                "raw_response": result.raw_response,
-                "pred_action": pred_action,
-                "gt_type": gt_type,
-                "pred_type": pred_type,
-                "metric_group": metric_group,
-                "strict_included": True,
-                "gui_only_included": metric_group == "gui_only",
-                "type_success": type_ok,
-                "step_success": step_ok,
-                "latency_seconds": result.latency_seconds,
-                "input_tokens": result.input_tokens,
-                "output_tokens": result.output_tokens,
-                "timings": result.timings,
-                "memory": result.memory,
-            }
-        )
-        print(
-            f"PROFILE_STEP {index}/{len(records)} episode={sample.get('episode_id')} "
-            f"step={sample.get('step_id')} type_ok={type_ok} step_ok={step_ok} "
-            f"total={result.timings['total_seconds']:.4f}s generate={result.timings['generate_seconds']:.4f}s",
-            flush=True,
-        )
+    profile_started = time.perf_counter()
+    batch_size = max(1, args.batch_size)
+    for start in range(0, len(records), batch_size):
+        chunk = records[start:start + batch_size]
+        image_paths = [resolved_image_path(sample, data_dir) for sample in chunk]
+        if len(chunk) == 1:
+            results = [
+                profile_infer_one(
+                    model,
+                    processor,
+                    image_paths[0],
+                    str(chunk[0]["task"]),
+                    max_new_tokens=args.max_new_tokens,
+                    device=args.device,
+                    visual_token_mode=args.visual_token_mode,
+                    min_pixels=args.min_pixels,
+                    max_pixels=args.max_pixels,
+                )
+            ]
+        else:
+            results = profile_infer_batch(
+                model,
+                processor,
+                [
+                    (image_path, str(sample["task"]), None, None)
+                    for sample, image_path in zip(chunk, image_paths)
+                ],
+                max_new_tokens=args.max_new_tokens,
+                device=args.device,
+                visual_token_mode=args.visual_token_mode,
+                min_pixels=args.min_pixels,
+                max_pixels=args.max_pixels,
+            )
+        for offset, (sample, image_path, result) in enumerate(zip(chunk, image_paths, results), 1):
+            detail = detail_from_result(sample, image_path, result, args.point_tolerance)
+            detail["timings"] = result.timings
+            detail["memory"] = result.memory
+            detail["effective_batch_size"] = len(chunk)
+            details.append(detail)
+            print(
+                f"PROFILE_STEP {start + offset}/{len(records)} episode={sample.get('episode_id')} "
+                f"step={sample.get('step_id')} type_ok={detail['type_success']} "
+                f"step_ok={detail['step_success']} total={result.timings['total_seconds']:.4f}s "
+                f"generate={result.timings['generate_seconds']:.4f}s",
+                flush=True,
+            )
+    wall_clock_seconds = time.perf_counter() - profile_started
+    output_token_total = sum(
+        int(item["output_tokens"])
+        for item in details
+        if item.get("output_tokens") is not None
+    )
+    summary = summarize_details(details)
+    summary["output_health"] = summarize_output_health(details, args.max_new_tokens)
+    summary["wall_clock_seconds"] = wall_clock_seconds
+    summary["samples_per_second"] = len(details) / wall_clock_seconds if wall_clock_seconds else 0.0
+    summary["output_tokens_per_second"] = output_token_total / wall_clock_seconds if wall_clock_seconds else 0.0
+    summary["effective_batch_size"] = args.batch_size
 
     output = {
         "config": {
@@ -170,11 +209,15 @@ def main() -> int:
             "device_map": args.device_map,
             "dtype": args.dtype,
             "attn_implementation": args.attn_implementation,
+            "batch_size": args.batch_size,
+            "visual_token_mode": args.visual_token_mode,
+            "min_pixels": args.min_pixels,
+            "max_pixels": args.max_pixels,
             "point_tolerance": args.point_tolerance,
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
         "load_seconds": load_seconds,
-        "summary": summarize_details(details),
+        "summary": summary,
         "final_memory": gpu_memory_snapshot(),
         "details": details,
     }
