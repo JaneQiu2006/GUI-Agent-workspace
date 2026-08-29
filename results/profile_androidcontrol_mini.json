@@ -11,69 +11,156 @@
     "dtype": "auto",
     "attn_implementation": null,
     "point_tolerance": 100.0,
-    "created_at": "2026-08-29T13:03:14.862661+00:00"
+    "created_at": "2026-08-29T13:28:46.514684+00:00"
   },
-  "load_seconds": 16.98791860882193,
+  "load_seconds": 19.5612568911165,
   "summary": {
     "num_steps": 5,
+    "num_trajectories": 2,
     "type_accuracy": 0.8,
     "step_success_rate": 0.8,
-    "avg_input_tokens": 3242.8,
-    "avg_output_tokens": 79.0,
+    "trajectory_success_rate": 0.5,
+    "avg_latency_seconds": 3.120401512645185,
+    "avg_input_tokens": 3325.8,
+    "avg_output_tokens": 12.8,
+    "views": {
+      "strict": {
+        "num_steps": 5,
+        "num_trajectories": 2,
+        "type_accuracy": 0.8,
+        "step_success_rate": 0.8,
+        "trajectory_success_rate": 0.5,
+        "avg_latency_seconds": 3.120401512645185,
+        "avg_input_tokens": 3325.8,
+        "avg_output_tokens": 12.8
+      },
+      "gui_only": {
+        "num_steps": 3,
+        "num_trajectories": 2,
+        "type_accuracy": 1.0,
+        "step_success_rate": 1.0,
+        "trajectory_success_rate": 1.0,
+        "avg_latency_seconds": 3.241166576743126,
+        "avg_input_tokens": 3327.0,
+        "avg_output_tokens": 14.0
+      },
+      "open_app": {
+        "num_steps": 1,
+        "num_trajectories": 1,
+        "type_accuracy": 0.0,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 3.0302823055535555,
+        "avg_input_tokens": 3324.0,
+        "avg_output_tokens": 12.0
+      },
+      "wait": {
+        "num_steps": 1,
+        "num_trajectories": 1,
+        "type_accuracy": 1.0,
+        "step_success_rate": 1.0,
+        "trajectory_success_rate": 1.0,
+        "avg_latency_seconds": 2.8482255274429917,
+        "avg_input_tokens": 3324.0,
+        "avg_output_tokens": 10.0
+      },
+      "by_gt_type": {
+        "CLICK": {
+          "num_steps": 2,
+          "num_trajectories": 2,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 3.628356209024787,
+          "avg_input_tokens": 3328.0,
+          "avg_output_tokens": 18.0
+        },
+        "OPEN_APP": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 0.0,
+          "step_success_rate": 0.0,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 3.0302823055535555,
+          "avg_input_tokens": 3324.0,
+          "avg_output_tokens": 12.0
+        },
+        "PRESS_BACK": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 2.466787312179804,
+          "avg_input_tokens": 3325.0,
+          "avg_output_tokens": 6.0
+        },
+        "WAIT": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 2.8482255274429917,
+          "avg_input_tokens": 3324.0,
+          "avg_output_tokens": 10.0
+        }
+      }
+    },
     "timings_seconds": {
       "apply_chat_template_seconds": {
-        "mean": 0.00039588809013366697,
-        "min": 0.00021647196263074875,
-        "max": 0.0005575204268097878,
-        "median": 0.00043845735490322113
+        "mean": 0.0002868788316845894,
+        "min": 0.00020739249885082245,
+        "max": 0.0004871441051363945,
+        "median": 0.00022928696125745773
       },
       "build_prompt_seconds": {
-        "mean": 2.0683929324150086e-05,
-        "min": 1.0789372026920319e-05,
-        "max": 2.864096313714981e-05,
-        "median": 2.605188637971878e-05
+        "mean": 1.426544040441513e-05,
+        "min": 9.94652509689331e-06,
+        "max": 2.3086555302143097e-05,
+        "median": 1.2592412531375885e-05
       },
       "decode_seconds": {
-        "mean": 0.00042387079447507857,
-        "min": 0.0002803076058626175,
-        "max": 0.000546126626431942,
-        "median": 0.00045744795352220535
+        "mean": 0.00018981415778398513,
+        "min": 0.00015405379235744476,
+        "max": 0.00025557540357112885,
+        "median": 0.00016782525926828384
       },
       "generate_seconds": {
-        "mean": 10.382050498574973,
-        "min": 6.2256801053881645,
-        "max": 16.526442596688867,
-        "median": 9.332283449359238
+        "mean": 3.120401512645185,
+        "min": 2.466787312179804,
+        "max": 3.6569753270596266,
+        "median": 3.0302823055535555
       },
       "input_to_device_seconds": {
-        "mean": 0.011415423639118672,
-        "min": 0.00936522614210844,
-        "max": 0.015950072556734085,
-        "median": 0.010318249464035034
+        "mean": 0.009939933940768243,
+        "min": 0.009216073900461197,
+        "max": 0.01077116746455431,
+        "median": 0.009860380552709103
       },
       "postprocess_seconds": {
-        "mean": 7.480829954147339e-05,
-        "min": 4.894006997346878e-05,
-        "max": 9.725894778966904e-05,
-        "median": 8.038617670536041e-05
+        "mean": 4.9151293933391574e-05,
+        "min": 3.323424607515335e-05,
+        "max": 8.735340088605881e-05,
+        "median": 4.0733255445957184e-05
       },
       "processor_encode_seconds": {
-        "mean": 0.04311696887016296,
-        "min": 0.032097794115543365,
-        "max": 0.08364430442452431,
-        "median": 0.03292641416192055
+        "mean": 0.033640363812446596,
+        "min": 0.029424557462334633,
+        "max": 0.03981638606637716,
+        "median": 0.032431209459900856
       },
       "total_seconds": {
-        "mean": 10.540063982829452,
-        "min": 6.409043554216623,
-        "max": 16.691300834529102,
-        "median": 9.485536938533187
+        "mean": 3.2645740237087013,
+        "min": 2.6206350456923246,
+        "max": 3.7836001366376877,
+        "median": 3.177741694264114
       },
       "vision_preprocess_seconds": {
-        "mean": 0.10250425487756729,
-        "min": 0.08775232825428247,
-        "max": 0.11337027791887522,
-        "median": 0.1080097546800971
+        "mean": 0.09998413976281881,
+        "min": 0.08609724324196577,
+        "max": 0.11255409009754658,
+        "median": 0.10476931277662516
       }
     }
   },
@@ -83,24 +170,24 @@
       "1": 29182155776
     },
     "reserved_bytes": {
-      "0": 27334279168,
-      "1": 30826037248
+      "0": 27525120000,
+      "1": 31239176192
     },
     "peak_allocated_bytes": {
-      "0": 26913243648,
-      "1": 30401157632
+      "0": 26957428736,
+      "1": 30448157184
     },
     "peak_reserved_bytes": {
-      "0": 27334279168,
-      "1": 30826037248
+      "0": 27525120000,
+      "1": 31239176192
     },
     "peak_allocated_gb": {
-      "0": 25.0649,
-      "1": 28.3133
+      "0": 25.1061,
+      "1": 28.3571
     },
     "peak_reserved_gb": {
-      "0": 25.457,
-      "1": 28.709
+      "0": 25.6348,
+      "1": 29.0938
     }
   },
   "details": [
@@ -110,49 +197,50 @@
       "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Open the Zoho Meet app",
       "image_path": "data/androidcontrol_mini/images/episode_0/step_0.png",
       "gt_action": "OPEN_APP [Zoho Meeting]",
-      "raw_response": "The task is to open the Zoho Meet app and view scheduled meetings. The current screen shows a calendar app, not Zoho Meet. I need to open the Zoho Meet app. Since I can't directly launch an app by name, I should go to the home screen first to find the app, or use the app drawer. The best first step is to go home to access the app launcher.\n</think>\n\n{\"action\":\"home\"}",
-      "pred_action": "PRESS_HOME",
+      "raw_response": "{\"action\":\"open\",\"text\":\"Zoho Meet\"}",
+      "pred_action": "UNKNOWN [{\"action\": \"open\", \"text\": \"Zoho Meet\"}]",
       "gt_type": "OPEN_APP",
-      "pred_type": "PRESS_HOME",
+      "pred_type": "UNKNOWN",
       "type_success": false,
       "step_success": false,
-      "input_tokens": 3241,
-      "output_tokens": 91,
+      "latency_seconds": 3.0302823055535555,
+      "input_tokens": 3324,
+      "output_tokens": 12,
       "timings": {
-        "build_prompt_seconds": 2.6640482246875763e-05,
-        "apply_chat_template_seconds": 0.0005575204268097878,
-        "vision_preprocess_seconds": 0.1080097546800971,
-        "processor_encode_seconds": 0.032587144523859024,
-        "input_to_device_seconds": 0.010318249464035034,
-        "generate_seconds": 10.852541917003691,
-        "decode_seconds": 0.00034853629767894745,
-        "postprocess_seconds": 8.038617670536041e-05,
-        "total_seconds": 11.004533244296908
+        "build_prompt_seconds": 2.3086555302143097e-05,
+        "apply_chat_template_seconds": 0.0004871441051363945,
+        "vision_preprocess_seconds": 0.10476931277662516,
+        "processor_encode_seconds": 0.03200457338243723,
+        "input_to_device_seconds": 0.009860380552709103,
+        "generate_seconds": 3.0302823055535555,
+        "decode_seconds": 0.00021384749561548233,
+        "postprocess_seconds": 4.6974048018455505e-05,
+        "total_seconds": 3.177741694264114
       },
       "memory": {
         "allocated_bytes": {
-          "0": 25611467264,
+          "0": 25611468800,
           "1": 29182155776
         },
         "reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_bytes": {
-          "0": 26910082560,
-          "1": 30400985088
+          "0": 26937377280,
+          "1": 30424543232
         },
         "peak_reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_gb": {
-          "0": 25.062,
-          "1": 28.3131
+          "0": 25.0874,
+          "1": 28.3351
         },
         "peak_reserved_gb": {
-          "0": 25.457,
-          "1": 28.709
+          "0": 25.3223,
+          "1": 28.7031
         }
       }
     },
@@ -162,49 +250,50 @@
       "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Open the Zoho Meet app",
       "image_path": "data/androidcontrol_mini/images/episode_0/step_1.png",
       "gt_action": "WAIT",
-      "raw_response": "The screen is a plain blue screen, likely the Zoho Meet app is loading or it's a splash screen. The task is to open Zoho Meet and view scheduled meetings. Since the screen appears to be loading (solid blue with no content), I should wait for it to load.\n</think>\n\n{\"action\":\"wait\",\"seconds\":2}",
+      "raw_response": "{\"action\":\"wait\",\"seconds\":2}",
       "pred_action": "WAIT",
       "gt_type": "WAIT",
       "pred_type": "WAIT",
       "type_success": true,
       "step_success": true,
-      "input_tokens": 3241,
-      "output_tokens": 71,
+      "latency_seconds": 2.8482255274429917,
+      "input_tokens": 3324,
+      "output_tokens": 10,
       "timings": {
-        "build_prompt_seconds": 2.605188637971878e-05,
-        "apply_chat_template_seconds": 0.00043845735490322113,
-        "vision_preprocess_seconds": 0.09246107283979654,
-        "processor_encode_seconds": 0.03292641416192055,
-        "input_to_device_seconds": 0.010172311216592789,
-        "generate_seconds": 8.9733044244349,
-        "decode_seconds": 0.00045744795352220535,
-        "postprocess_seconds": 5.894619971513748e-05,
-        "total_seconds": 9.109905342571437
+        "build_prompt_seconds": 1.4246441423892975e-05,
+        "apply_chat_template_seconds": 0.00028348900377750397,
+        "vision_preprocess_seconds": 0.08609724324196577,
+        "processor_encode_seconds": 0.032431209459900856,
+        "input_to_device_seconds": 0.01000125426799059,
+        "generate_seconds": 2.8482255274429917,
+        "decode_seconds": 0.0001577688381075859,
+        "postprocess_seconds": 3.746151924133301e-05,
+        "total_seconds": 2.9773005805909634
       },
       "memory": {
         "allocated_bytes": {
-          "0": 25611466752,
+          "0": 25611468800,
           "1": 29182155776
         },
         "reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_bytes": {
-          "0": 26910082560,
-          "1": 30400985088
+          "0": 26937377280,
+          "1": 30424543232
         },
         "peak_reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_gb": {
-          "0": 25.062,
-          "1": 28.3131
+          "0": 25.0874,
+          "1": 28.3351
         },
         "peak_reserved_gb": {
-          "0": 25.457,
-          "1": 28.709
+          "0": 25.3223,
+          "1": 28.7031
         }
       }
     },
@@ -214,49 +303,50 @@
       "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Go to the Past section",
       "image_path": "data/androidcontrol_mini/images/episode_0/step_2.png",
       "gt_action": "CLICK <point>[[500,162]]</point>",
-      "raw_response": "We need to go to Past section. The tab \"PAST\" is visible at top center. Tap it.\n</think>\n\n{\"action\":\"tap\",\"x\":498,\"y\":162}",
-      "pred_action": "CLICK <point>[[498,162]]</point>",
+      "raw_response": "{\"action\":\"tap\",\"x\":499,\"y\":162}",
+      "pred_action": "CLICK <point>[[499,162]]</point>",
       "gt_type": "CLICK",
       "pred_type": "CLICK",
       "type_success": true,
       "step_success": true,
-      "input_tokens": 3240,
-      "output_tokens": 44,
+      "latency_seconds": 3.6569753270596266,
+      "input_tokens": 3323,
+      "output_tokens": 18,
       "timings": {
-        "build_prompt_seconds": 1.1296942830085754e-05,
-        "apply_chat_template_seconds": 0.0002927025780081749,
-        "vision_preprocess_seconds": 0.08775232825428247,
-        "processor_encode_seconds": 0.08364430442452431,
-        "input_to_device_seconds": 0.011271258816123009,
-        "generate_seconds": 6.2256801053881645,
-        "decode_seconds": 0.0002803076058626175,
-        "postprocess_seconds": 4.894006997346878e-05,
-        "total_seconds": 6.409043554216623
+        "build_prompt_seconds": 9.94652509689331e-06,
+        "apply_chat_template_seconds": 0.00022708158940076828,
+        "vision_preprocess_seconds": 0.08685101754963398,
+        "processor_encode_seconds": 0.029424557462334633,
+        "input_to_device_seconds": 0.009850793518126011,
+        "generate_seconds": 3.6569753270596266,
+        "decode_seconds": 0.00016782525926828384,
+        "postprocess_seconds": 4.0733255445957184e-05,
+        "total_seconds": 3.7836001366376877
       },
       "memory": {
         "allocated_bytes": {
-          "0": 25611466752,
+          "0": 25611468800,
           "1": 29182155776
         },
         "reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_bytes": {
-          "0": 26910082560,
-          "1": 30400985088
+          "0": 26937377280,
+          "1": 30424543232
         },
         "peak_reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_gb": {
-          "0": 25.062,
-          "1": 28.3131
+          "0": 25.0874,
+          "1": 28.3351
         },
         "peak_reserved_gb": {
-          "0": 25.457,
-          "1": 28.709
+          "0": 25.3223,
+          "1": 28.7031
         }
       }
     },
@@ -266,49 +356,50 @@
       "task": "目标任务：Go to the mobile category after closing the pop up and browse the products\n当前步骤：Go to the previous page",
       "image_path": "data/androidcontrol_mini/images/episode_20/step_0.png",
       "gt_action": "PRESS_BACK",
-      "raw_response": "The task asks to go to the previous page. The current screen shows Amazon search results for \"milton duo dlx 1000\". To go to the previous page, I should use the back action. The instruction says \"Go to the previous page\", which corresponds to the back action.\n</think>\n\n{\"action\":\"back\"}",
+      "raw_response": "{\"action\":\"back\"}",
       "pred_action": "PRESS_BACK",
       "gt_type": "PRESS_BACK",
       "pred_type": "PRESS_BACK",
       "type_success": true,
       "step_success": true,
-      "input_tokens": 3242,
-      "output_tokens": 70,
+      "latency_seconds": 2.466787312179804,
+      "input_tokens": 3325,
+      "output_tokens": 6,
       "timings": {
-        "build_prompt_seconds": 1.0789372026920319e-05,
-        "apply_chat_template_seconds": 0.00021647196263074875,
-        "vision_preprocess_seconds": 0.11092784069478512,
-        "processor_encode_seconds": 0.032097794115543365,
-        "input_to_device_seconds": 0.00936522614210844,
-        "generate_seconds": 9.332283449359238,
-        "decode_seconds": 0.00048693548887968063,
-        "postprocess_seconds": 8.851010352373123e-05,
-        "total_seconds": 9.485536938533187
+        "build_prompt_seconds": 1.1455267667770386e-05,
+        "apply_chat_template_seconds": 0.00020739249885082245,
+        "vision_preprocess_seconds": 0.10964903514832258,
+        "processor_encode_seconds": 0.03452509269118309,
+        "input_to_device_seconds": 0.009216073900461197,
+        "generate_seconds": 2.466787312179804,
+        "decode_seconds": 0.00015405379235744476,
+        "postprocess_seconds": 3.323424607515335e-05,
+        "total_seconds": 2.6206350456923246
       },
       "memory": {
         "allocated_bytes": {
-          "0": 25611466752,
+          "0": 25611468800,
           "1": 29182155776
         },
         "reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_bytes": {
-          "0": 26910162432,
-          "1": 30401013760
+          "0": 26937486848,
+          "1": 30424654848
         },
         "peak_reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27189575680,
+          "1": 30819745792
         },
         "peak_allocated_gb": {
-          "0": 25.062,
-          "1": 28.3132
+          "0": 25.0875,
+          "1": 28.3352
         },
         "peak_reserved_gb": {
-          "0": 25.457,
-          "1": 28.709
+          "0": 25.3223,
+          "1": 28.7031
         }
       }
     },
@@ -318,49 +409,50 @@
       "task": "目标任务：Go to the mobile category after closing the pop up and browse the products\n当前步骤：Click on the Mobile category at the top left corner of the screen",
       "image_path": "data/androidcontrol_mini/images/episode_20/step_1.png",
       "gt_action": "CLICK <point>[[102,211]]</point>",
-      "raw_response": "The task requires going to the mobile category. The current screen shows the Amazon app home page with a category row near the top. The \"Mobiles\" category is visible at the top left, with an icon and label. I need to tap on it. The label \"Mobiles\" is around x=100, y=252, and the icon is above it around y=210. Tapping the center of the Mobiles category item is appropriate.\n</think>\n\n{\"action\":\"tap\",\"x\":100,\"y\":210}",
-      "pred_action": "CLICK <point>[[100,210]]</point>",
+      "raw_response": "{\"action\":\"tap\",\"x\":101,\"y\":212}",
+      "pred_action": "CLICK <point>[[101,212]]</point>",
       "gt_type": "CLICK",
       "pred_type": "CLICK",
       "type_success": true,
       "step_success": true,
-      "input_tokens": 3250,
-      "output_tokens": 119,
+      "latency_seconds": 3.5997370909899473,
+      "input_tokens": 3333,
+      "output_tokens": 18,
       "timings": {
-        "build_prompt_seconds": 2.864096313714981e-05,
-        "apply_chat_template_seconds": 0.00047428812831640244,
-        "vision_preprocess_seconds": 0.11337027791887522,
-        "processor_encode_seconds": 0.034329187124967575,
-        "input_to_device_seconds": 0.015950072556734085,
-        "generate_seconds": 16.526442596688867,
-        "decode_seconds": 0.000546126626431942,
-        "postprocess_seconds": 9.725894778966904e-05,
-        "total_seconds": 16.691300834529102
+        "build_prompt_seconds": 1.2592412531375885e-05,
+        "apply_chat_template_seconds": 0.00022928696125745773,
+        "vision_preprocess_seconds": 0.11255409009754658,
+        "processor_encode_seconds": 0.03981638606637716,
+        "input_to_device_seconds": 0.01077116746455431,
+        "generate_seconds": 3.5997370909899473,
+        "decode_seconds": 0.00025557540357112885,
+        "postprocess_seconds": 8.735340088605881e-05,
+        "total_seconds": 3.763592661358416
       },
       "memory": {
         "allocated_bytes": {
-          "0": 25611467264,
+          "0": 25611470336,
           "1": 29182155776
         },
         "reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27525120000,
+          "1": 31239176192
         },
         "peak_allocated_bytes": {
-          "0": 26913243648,
-          "1": 30401157632
+          "0": 26957428736,
+          "1": 30448157184
         },
         "peak_reserved_bytes": {
-          "0": 27334279168,
-          "1": 30826037248
+          "0": 27525120000,
+          "1": 31239176192
         },
         "peak_allocated_gb": {
-          "0": 25.0649,
-          "1": 28.3133
+          "0": 25.1061,
+          "1": 28.3571
         },
         "peak_reserved_gb": {
-          "0": 25.457,
-          "1": 28.709
+          "0": 25.6348,
+          "1": 29.0938
         }
       }
     }
