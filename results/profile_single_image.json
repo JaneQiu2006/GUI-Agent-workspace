@@ -1,0 +1,249 @@
+{
+  "config": {
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "image": "data/androidcontrol_mini/images/episode_0/step_0.png",
+    "instruction": "目标任务：打开设置\\n当前步骤：点击设置图标",
+    "warmup": 1,
+    "repeats": 3,
+    "max_new_tokens": 128,
+    "device": "auto",
+    "device_map": "auto",
+    "dtype": "auto",
+    "attn_implementation": null,
+    "created_at": "2026-08-29T12:59:42.523581+00:00"
+  },
+  "load_seconds": 18.139672440476716,
+  "summary": {
+    "num_runs": 3,
+    "timings_seconds": {
+      "apply_chat_template_seconds": {
+        "mean": 0.0006168829277157784,
+        "min": 0.0004923418164253235,
+        "max": 0.0008646352216601372,
+        "median": 0.0004936717450618744
+      },
+      "build_prompt_seconds": {
+        "mean": 2.469805379708608e-05,
+        "min": 1.6381964087486267e-05,
+        "max": 3.6665238440036774e-05,
+        "median": 2.10469588637352e-05
+      },
+      "decode_seconds": {
+        "mean": 0.0012967204675078392,
+        "min": 0.00043444521725177765,
+        "max": 0.0029762908816337585,
+        "median": 0.0004794253036379814
+      },
+      "generate_seconds": {
+        "mean": 8.973332752784094,
+        "min": 7.982589730992913,
+        "max": 10.804949382320046,
+        "median": 8.13245914503932
+      },
+      "input_to_device_seconds": {
+        "mean": 0.012380353485544523,
+        "min": 0.009385044686496258,
+        "max": 0.01788326259702444,
+        "median": 0.00987275317311287
+      },
+      "postprocess_seconds": {
+        "mean": 9.417409698168437e-05,
+        "min": 8.910708129405975e-05,
+        "max": 9.94652509689331e-05,
+        "median": 9.394995868206024e-05
+      },
+      "processor_encode_seconds": {
+        "mean": 0.0465373316158851,
+        "min": 0.029112000949680805,
+        "max": 0.08070939965546131,
+        "median": 0.02979059424251318
+      },
+      "total_seconds": {
+        "mean": 9.167203320500752,
+        "min": 8.12762643583119,
+        "max": 10.961458722129464,
+        "median": 8.4125248035416
+      },
+      "vision_preprocess_seconds": {
+        "mean": 0.13285281602293253,
+        "min": 0.10472176596522331,
+        "max": 0.1879654871299863,
+        "median": 0.10587119497358799
+      }
+    },
+    "avg_output_tokens": 60.0,
+    "avg_input_tokens": 3228.0
+  },
+  "final_memory": {
+    "allocated_bytes": {
+      "0": 25548446720,
+      "1": 29182155776
+    },
+    "reserved_bytes": {
+      "0": 27334279168,
+      "1": 30826037248
+    },
+    "peak_allocated_bytes": {
+      "0": 26909654528,
+      "1": 30400326144
+    },
+    "peak_reserved_bytes": {
+      "0": 27334279168,
+      "1": 30826037248
+    },
+    "peak_allocated_gb": {
+      "0": 25.0616,
+      "1": 28.3125
+    },
+    "peak_reserved_gb": {
+      "0": 25.457,
+      "1": 28.709
+    }
+  },
+  "runs": [
+    {
+      "index": 0,
+      "image": "data/androidcontrol_mini/images/episode_0/step_0.png",
+      "instruction": "目标任务：打开设置\\n当前步骤：点击设置图标",
+      "raw_response": "当前界面是日历应用，不是桌面。任务要求打开设置，当前步骤是点击设置图标。但当前屏幕没有设置图标，需要先回到桌面才能找到设置图标。因此应该先执行 home 操作回到桌面，然后再点击设置图标。\n</think>\n\n{\"action\":\"home\"}",
+      "parsed_action": {
+        "action": "home"
+      },
+      "input_tokens": 3228,
+      "output_tokens": 60,
+      "timings": {
+        "build_prompt_seconds": 3.6665238440036774e-05,
+        "apply_chat_template_seconds": 0.0008646352216601372,
+        "vision_preprocess_seconds": 0.1879654871299863,
+        "processor_encode_seconds": 0.08070939965546131,
+        "input_to_device_seconds": 0.00987275317311287,
+        "generate_seconds": 8.13245914503932,
+        "decode_seconds": 0.00043444521725177765,
+        "postprocess_seconds": 9.394995868206024e-05,
+        "total_seconds": 8.4125248035416
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25611466752,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 27334279168,
+          "1": 30826037248
+        },
+        "peak_allocated_bytes": {
+          "0": 26909654528,
+          "1": 30400326144
+        },
+        "peak_reserved_bytes": {
+          "0": 27334279168,
+          "1": 30826037248
+        },
+        "peak_allocated_gb": {
+          "0": 25.0616,
+          "1": 28.3125
+        },
+        "peak_reserved_gb": {
+          "0": 25.457,
+          "1": 28.709
+        }
+      }
+    },
+    {
+      "index": 1,
+      "image": "data/androidcontrol_mini/images/episode_0/step_0.png",
+      "instruction": "目标任务：打开设置\\n当前步骤：点击设置图标",
+      "raw_response": "当前界面是日历应用，不是桌面。任务要求打开设置，当前步骤是点击设置图标。但当前屏幕没有设置图标，需要先回到桌面才能找到设置图标。因此应该先执行 home 操作回到桌面，然后再点击设置图标。\n</think>\n\n{\"action\":\"home\"}",
+      "parsed_action": {
+        "action": "home"
+      },
+      "input_tokens": 3228,
+      "output_tokens": 60,
+      "timings": {
+        "build_prompt_seconds": 1.6381964087486267e-05,
+        "apply_chat_template_seconds": 0.0004936717450618744,
+        "vision_preprocess_seconds": 0.10587119497358799,
+        "processor_encode_seconds": 0.029112000949680805,
+        "input_to_device_seconds": 0.01788326259702444,
+        "generate_seconds": 10.804949382320046,
+        "decode_seconds": 0.0029762908816337585,
+        "postprocess_seconds": 9.94652509689331e-05,
+        "total_seconds": 10.961458722129464
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25611466752,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 27334279168,
+          "1": 30826037248
+        },
+        "peak_allocated_bytes": {
+          "0": 26909654528,
+          "1": 30400326144
+        },
+        "peak_reserved_bytes": {
+          "0": 27334279168,
+          "1": 30826037248
+        },
+        "peak_allocated_gb": {
+          "0": 25.0616,
+          "1": 28.3125
+        },
+        "peak_reserved_gb": {
+          "0": 25.457,
+          "1": 28.709
+        }
+      }
+    },
+    {
+      "index": 2,
+      "image": "data/androidcontrol_mini/images/episode_0/step_0.png",
+      "instruction": "目标任务：打开设置\\n当前步骤：点击设置图标",
+      "raw_response": "当前界面是日历应用，不是桌面。任务要求打开设置，当前步骤是点击设置图标。但当前屏幕没有设置图标，需要先回到桌面才能找到设置图标。因此应该先执行 home 操作回到桌面，然后再点击设置图标。\n</think>\n\n{\"action\":\"home\"}",
+      "parsed_action": {
+        "action": "home"
+      },
+      "input_tokens": 3228,
+      "output_tokens": 60,
+      "timings": {
+        "build_prompt_seconds": 2.10469588637352e-05,
+        "apply_chat_template_seconds": 0.0004923418164253235,
+        "vision_preprocess_seconds": 0.10472176596522331,
+        "processor_encode_seconds": 0.02979059424251318,
+        "input_to_device_seconds": 0.009385044686496258,
+        "generate_seconds": 7.982589730992913,
+        "decode_seconds": 0.0004794253036379814,
+        "postprocess_seconds": 8.910708129405975e-05,
+        "total_seconds": 8.12762643583119
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25611466752,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 27334279168,
+          "1": 30826037248
+        },
+        "peak_allocated_bytes": {
+          "0": 26909654528,
+          "1": 30400326144
+        },
+        "peak_reserved_bytes": {
+          "0": 27334279168,
+          "1": 30826037248
+        },
+        "peak_allocated_gb": {
+          "0": 25.0616,
+          "1": 28.3125
+        },
+        "peak_reserved_gb": {
+          "0": 25.457,
+          "1": 28.709
+        }
+      }
+    }
+  ]
+}
