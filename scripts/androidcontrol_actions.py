@@ -7,6 +7,10 @@ from typing import Any, Dict, Optional, Tuple
 
 
 POINT_RE = re.compile(r"<point>\[\[\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\]\]</point>")
+ACTION_RE = re.compile(r'"action(?:_type)?"\s*:\s*"([^"]+)"', re.IGNORECASE)
+UNLABELED_Y_RE = re.compile(
+    r'"(?:x|start_x)"\s*:\s*(-?[0-9]+(?:\.[0-9]+)?)\s*,\s*(-?[0-9]+(?:\.[0-9]+)?)\s*(?:[,}])'
+)
 
 
 def gt_action_to_command(action: Dict[str, Any], width: int, height: int) -> str:
@@ -67,28 +71,25 @@ def canonicalize_action(raw_response: str) -> str:
             parsed = value
             break
     if parsed is None:
-        return text
-    return dict_action_to_command(parsed)
+        repaired = parse_malformed_action_json(text)
+        return repaired if repaired else text
+    command = dict_action_to_command(parsed)
+    if action_type(command) != "UNKNOWN":
+        return command
+    repaired = repair_malformed_dict_action(parsed)
+    return repaired if repaired else command
 
 
 def dict_action_to_command(action: Dict[str, Any]) -> str:
     kind = str(action.get("action") or action.get("action_type") or "").lower()
     if kind in {"tap", "click"}:
-        x = action.get("x")
-        y = action.get("y")
-        point = action.get("point") or action.get("coordinate")
-        if isinstance(point, (list, tuple)) and len(point) >= 2:
-            x, y = point[:2]
+        x, y = point_fields(action)
         if x is not None and y is not None:
-            return f"CLICK <point>[[{int(round(float(x)))},{int(round(float(y)))}]]</point>"
+            return normalized_point_command("CLICK", x, y)
     if kind in {"long_press", "longpress"}:
-        x = action.get("x")
-        y = action.get("y")
-        point = action.get("point") or action.get("coordinate")
-        if isinstance(point, (list, tuple)) and len(point) >= 2:
-            x, y = point[:2]
+        x, y = point_fields(action)
         if x is not None and y is not None:
-            return f"LONG_PRESS <point>[[{int(round(float(x)))},{int(round(float(y)))}]]</point>"
+            return normalized_point_command("LONG_PRESS", x, y)
     if kind in {"swipe", "scroll"}:
         direction = str(action.get("direction") or "").upper()
         if direction:
@@ -103,13 +104,75 @@ def dict_action_to_command(action: Dict[str, Any]) -> str:
         return "PRESS_HOME"
     if kind == "wait":
         return "WAIT"
-    if kind == "open_app":
-        return f"OPEN_APP [{action.get('app_name') or action.get('app') or ''}]"
+    if kind in {"open_app", "open", "openapp", "launch", "launch_app"}:
+        app_name = action.get("app_name") or action.get("app") or action.get("text") or action.get("name") or ""
+        return f"OPEN_APP [{app_name}]"
     if kind == "complete":
         return "COMPLETE"
     if kind == "impossible":
         return "IMPOSSIBLE"
     return f"UNKNOWN [{json.dumps(action, ensure_ascii=False)}]"
+
+
+def point_fields(action: Dict[str, Any]) -> Tuple[Any, Any]:
+    x = action.get("x")
+    y = action.get("y")
+    point = action.get("point") or action.get("coordinate") or action.get("position")
+    if isinstance(point, (list, tuple)) and len(point) >= 2:
+        x, y = point[:2]
+    if x is not None and y is None:
+        y = single_extra_numeric_value(action, skip_keys={"x"})
+    return x, y
+
+
+def single_extra_numeric_value(action: Dict[str, Any], skip_keys: set[str]) -> Optional[Any]:
+    values = []
+    for key, value in action.items():
+        if key in skip_keys or key in {"action", "action_type", "text", "app", "app_name", "name"}:
+            continue
+        if is_number(key) and is_number(value):
+            values.append(value)
+    return values[0] if len(values) == 1 else None
+
+
+def repair_malformed_dict_action(action: Dict[str, Any]) -> Optional[str]:
+    kind = str(action.get("action") or action.get("action_type") or "").lower()
+    if kind in {"tap", "click"}:
+        x, y = point_fields(action)
+        if x is not None and y is not None:
+            return normalized_point_command("CLICK", x, y)
+    if kind in {"long_press", "longpress"}:
+        x, y = point_fields(action)
+        if x is not None and y is not None:
+            return normalized_point_command("LONG_PRESS", x, y)
+    return None
+
+
+def parse_malformed_action_json(text: str) -> Optional[str]:
+    action_match = ACTION_RE.search(text)
+    if not action_match:
+        return None
+    kind = action_match.group(1).lower()
+    if kind in {"tap", "click", "long_press", "longpress"}:
+        point_match = UNLABELED_Y_RE.search(text)
+        if point_match:
+            prefix = "LONG_PRESS" if kind in {"long_press", "longpress"} else "CLICK"
+            return normalized_point_command(prefix, point_match.group(1), point_match.group(2))
+    return None
+
+
+def normalized_point_command(prefix: str, x_value: Any, y_value: Any) -> str:
+    x = int(round(float(x_value)))
+    y = int(round(float(y_value)))
+    return f"{prefix} <point>[[{x},{y}]]</point>"
+
+
+def is_number(value: Any) -> bool:
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+    return True
 
 
 def parse_legacy_command(text: str) -> Optional[str]:
@@ -150,10 +213,22 @@ def infer_scroll_direction(action: Dict[str, Any]) -> Optional[str]:
     dx = float(x2) - float(x1)
     dy = float(y2) - float(y1)
     if abs(dx) > abs(dy):
-        return "RIGHT" if dx > 0 else "LEFT"
+        finger_direction = "RIGHT" if dx > 0 else "LEFT"
+        return finger_to_content_scroll_direction(finger_direction)
     if abs(dy) > 0:
-        return "DOWN" if dy > 0 else "UP"
+        finger_direction = "DOWN" if dy > 0 else "UP"
+        return finger_to_content_scroll_direction(finger_direction)
     return None
+
+
+def finger_to_content_scroll_direction(direction: str) -> str:
+    opposites = {
+        "UP": "DOWN",
+        "DOWN": "UP",
+        "LEFT": "RIGHT",
+        "RIGHT": "LEFT",
+    }
+    return opposites[direction]
 
 
 def action_type(command: str) -> str:

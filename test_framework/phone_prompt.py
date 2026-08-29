@@ -27,9 +27,9 @@ PHONE_SYSTEM_PROMPT = """你正在操作一台真实的华为 Android 手机，�
 - 无法继续：{"action":"impossible"}
 
 格式约束：
-1. tap 必须同时包含独立的 x 和 y 数字字段。禁止写成 "x":[431,70]，禁止把数字写成字符串，禁止遗漏字段或多写括号。
+1. tap 必须同时包含独立的 x 和 y 数字字段。正确示例：{"action":"tap","x":431,"y":70}。禁止写成 {"action":"tap","x":431,70}、{"action":"tap","x":[431,70]} 或 {"action":"tap","x":431,"70":250}，禁止把数字写成字符串，禁止遗漏字段或多写括号。
 2. swipe 必须同时包含 x1、y1、x2、y2、duration_ms 五个数字字段。不要输出 SCROLL、swipe_up 或 direction 等其他格式。
-3. 不要输出 CLICK、TYPE [...]、PRESS_BACK、PRESS_HOME、COMPLETE 等纯文本命令；它们不是本项目的 action 格式。
+3. 不要输出 CLICK、TYPE [...]、PRESS_BACK、PRESS_HOME、COMPLETE、open、openApp 等纯文本命令或其他 JSON action 名；它们不是本项目的 action 格式。
 4. 每次只输出一个动作，再根据下一张截图继续判断；不要在一个 JSON 中组合多个动作。
 5. 如果无法确定精确坐标，也必须给出最可能控件中心的整数坐标，不要用文字解释替代 JSON。
 

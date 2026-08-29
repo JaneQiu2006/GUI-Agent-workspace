@@ -18,7 +18,7 @@ for path in (TEST_FRAMEWORK, SCRIPT_DIR):
         sys.path.insert(0, str(path))
 
 from androidcontrol_actions import action_type, actions_match, canonicalize_action
-from eval_androidcontrol import build_metric_views, load_samples
+from eval_androidcontrol import build_metric_views, load_samples, metric_group_for_type, metric_view_policy
 from hf_gui_baseline import (
     DEFAULT_MODEL_PATH,
     gpu_memory_snapshot,
@@ -44,6 +44,8 @@ def summarize_details(details: List[Dict[str, Any]]) -> Dict[str, Any]:
     views = build_metric_views(details)
     return {
         **views["strict"],
+        "primary_metric_view": "gui_only",
+        "metric_view_policy": metric_view_policy(),
         "views": views,
         "avg_input_tokens": statistics.fmean(input_values) if input_values else 0.0,
         "avg_output_tokens": statistics.fmean(output_values) if output_values else 0.0,
@@ -125,6 +127,7 @@ def main() -> int:
         gt_type = action_type(gt_action)
         type_ok = pred_type == gt_type
         step_ok = actions_match(pred_action, gt_action, point_tolerance=args.point_tolerance)
+        metric_group = metric_group_for_type(gt_type)
         details.append(
             {
                 "episode_id": sample.get("episode_id"),
@@ -136,6 +139,9 @@ def main() -> int:
                 "pred_action": pred_action,
                 "gt_type": gt_type,
                 "pred_type": pred_type,
+                "metric_group": metric_group,
+                "strict_included": True,
+                "gui_only_included": metric_group == "gui_only",
                 "type_success": type_ok,
                 "step_success": step_ok,
                 "latency_seconds": result.latency_seconds,

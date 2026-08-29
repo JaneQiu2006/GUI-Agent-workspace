@@ -279,3 +279,132 @@ GPU1 显存更高，说明当前 `device_map=auto` 的模型切分不完全均�
 5. 最优先的“加速”其实是减少无效输出 token。
 
 因此，下一轮实验应先做 prompt/generation/evaluator 校准，然后再开展量化、serving backend、batching 等真正的推理加速对比。
+
+## 2026-08-29 21:31 CST Prompt And Metric Calibration Rerun
+
+本节记录提示词强化和评测指标视图修正后的新结果。对应结果文件更新时间为：
+
+- `results/qwen_androidcontrol_mini.json`: 2026-08-29 21:29:35 CST
+- `results/profile_androidcontrol_mini.json`: 2026-08-29 21:29:35 CST
+- `results/profile_single_image.json`: 仍为 2026-08-29 21:06:35 CST，本轮未重新生成
+
+本轮仍使用同一份 `data/androidcontrol_mini/test.json`，`max_new_tokens=128`，模型路径为 `/data2/home/models/Qwen3.8-27B`。这次改动不涉及算法加速、量化、batching 或 serving backend，仅验证 prompt 输出约束和 evaluator 指标分视图。
+
+### Evaluation Summary
+
+| Metric | Previous | New | Change |
+| --- | ---: | ---: | ---: |
+| num_steps | 51 | 51 | 0 |
+| num_trajectories | 10 | 10 | 0 |
+| strict type_accuracy | 64.71% | 62.75% | -1.96 pp |
+| strict step_success_rate | 41.18% | 47.06% | +5.88 pp |
+| strict trajectory_success_rate | 0.00% | 0.00% | 0 pp |
+| avg_latency_seconds | 14.62s | 4.10s | -72.0% |
+| avg_output_tokens | 101.20 | 19.53 | -80.7% |
+| peak_gpu_memory_gb | GPU0 25.08 / GPU1 28.33 | GPU0 25.11 / GPU1 28.36 | roughly unchanged |
+
+最重要的变化是输出长度问题基本被压住：
+
+- `</think>` 从 44 / 51 降到 0 / 51。
+- 达到 `max_new_tokens=128` 截断从 12 / 51 降到 0 / 51。
+- 51 / 51 条输出都以 `{` 开头并以 `}` 结尾。
+- 输出 token 中位数为 18，范围为 6 到 42。
+
+因此，本轮 latency 下降主要来自无效 reasoning token 消失，而不是底层推理算法变化。平均 step latency 从 14.62s 降到 4.10s，AndroidControl profile 子集的 `generate_seconds` 也从 10.38s 降到 3.12s。
+
+### New Metric Views
+
+本轮 evaluator 开始同时输出 `strict`、`gui_only`、`open_app`、`wait` 和 `by_gt_type` 视图。顶层指标仍等价于 `strict`，用于兼容旧结果。
+
+| View | Steps | Type Acc | Step Acc | Traj Acc | Avg Tokens | Avg Latency |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| strict | 51 | 62.75% | 47.06% | 0.00% | 19.53 | 4.10s |
+| gui_only, excluding OPEN_APP and WAIT | 37 | 81.08% | 59.46% | 20.00% | 21.30 | 4.25s |
+| open_app only | 6 | 0.00% | 0.00% | 0.00% | 13.17 | 3.72s |
+| wait only | 8 | 25.00% | 25.00% | 25.00% | 16.12 | 3.67s |
+
+`gui_only` 是目前更适合观察普通静态 GUI 操作能力的口径。与旧分析中过滤 `OPEN_APP` 和 `WAIT` 后的结果相比，`gui_only` step success 从 51.35% 提升到 59.46%，但 type accuracy 从 83.78% 小幅降到 81.08%。这说明 prompt 强约束改善了可执行 step 命中和 latency，但还没有完全解决 JSON 字段合法性。
+
+### Breakdown By GT Type
+
+| GT Type | Count | Type Acc | Step Acc | Avg Tokens | Avg Latency |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| CLICK | 24 | 75.00% | 70.83% | 17.33 | 3.87s |
+| LONG_PRESS | 1 | 0.00% | 0.00% | 18.00 | 3.64s |
+| OPEN_APP | 6 | 0.00% | 0.00% | 13.17 | 3.72s |
+| PRESS_BACK | 2 | 100.00% | 100.00% | 6.00 | 3.19s |
+| SCROLL | 7 | 100.00% | 0.00% | 42.00 | 6.27s |
+| TYPE | 3 | 100.00% | 100.00% | 16.00 | 3.45s |
+| WAIT | 8 | 25.00% | 25.00% | 16.12 | 3.67s |
+
+CLICK 的 step success 从 58.3% 提升到 70.8%，但 type accuracy 从 83.3% 降到 75.0%。主要原因不是模型不再点击，而是部分短 JSON 写成了非法字段格式，例如：
+
+```json
+{"action":"tap","x":498,491}
+```
+
+这类输出很短，也没有 thinking，但缺少独立的 `y` 字段，当前 parser 会按 `UNKNOWN` 处理。类似 malformed tap JSON 在本轮 UNKNOWN 中占主要部分。
+
+SCROLL 的 type accuracy 从 85.7% 提升到 100.0%，但 step success 仍为 0.0%。失败仍集中在方向语义：
+
+```text
+GT:   SCROLL[DOWN]
+PRED: SCROLL[UP]
+```
+
+这进一步支持旧结论：SCROLL 的问题不是输出长度，而是 AndroidControl 方向定义与手指滑动方向的 evaluator 语义不一致，需要单独校准。
+
+### Remaining Failure Modes
+
+本轮 `pred_type=UNKNOWN` 共 11 / 51。按现象看主要分为三类：
+
+1. malformed tap JSON：模型输出了类似 `{"action":"tap","x":823,90}` 的短 JSON，缺少 `y` 键。
+2. unsupported open action：模型输出 `{"action":"open","text":"Zoho Meet"}` 或 `{"action":"openApp","text":"Rtistiq"}`，但当前 action contract 没有 open/openApp。
+3. malformed coordinate key：例如 `{"action":"tap","x":258,"417":351}`。
+
+失败矩阵显示：
+
+| GT Type | Main Failed Pred Types |
+| --- | --- |
+| CLICK | UNKNOWN 6, CLICK 1 |
+| LONG_PRESS | CLICK 1 |
+| OPEN_APP | UNKNOWN 3, CLICK 2, PRESS_HOME 1 |
+| SCROLL | SCROLL 7 |
+| WAIT | CLICK 4, UNKNOWN 2 |
+
+这说明下一步仍应优先做测试代码和 prompt 级别校准，而不是算法优化：
+
+- prompt 继续强调 tap 必须使用 `"x": number, "y": number`，不要写成 `"x":498,491`。
+- 对 `OPEN_APP` 明确保持单独统计；如果要让 strict 指标可比，需要决定是否把 `open/openApp` 纳入 contract，或继续作为环境级 action 单独报告。
+- 对 SCROLL 单独做方向语义校准，避免把正确的浏览意图记为失败。
+- WAIT 继续单独统计，因为静态单帧下它和可操作点击之间有天然噪声。
+
+### Profiling Summary
+
+新的 AndroidControl mini profile 跑了 5 个 step，`warmup=1`，`max_new_tokens=128`。
+
+| Stage | Mean Time | Share |
+| --- | ---: | ---: |
+| build_prompt | 0.0000s | 0.00% |
+| apply_chat_template | 0.0003s | 0.01% |
+| vision_preprocess | 0.1000s | 3.06% |
+| processor_encode | 0.0336s | 1.03% |
+| input_to_device | 0.0099s | 0.30% |
+| generate | 3.1204s | 95.58% |
+| decode | 0.0002s | 0.01% |
+| postprocess | 0.0000s | 0.00% |
+| total | 3.2646s | 100.00% |
+
+profile 子集平均输出 token 从旧结果的 79.0 降到 12.8，`generate_seconds` 从 10.38s 降到 3.12s。`generate` 仍是主耗时，占比 95.6%，但绝对时间已随输出长度显著下降。视觉预处理仍约 0.10s，不是当前主要瓶颈。
+
+### Updated Interpretation
+
+本轮验证了旧分析中的首要判断：在做真正推理加速前，先消除 thinking 和长输出是收益最大的修正。现在输出长度和截断问题已基本解决，latency 明显下降，普通 GUI step success 也提升。
+
+当前瓶颈已经从“长 reasoning 输出”转移到三件更具体的校准工作：
+
+1. JSON 字段合法性：短输出仍可能写错字段，导致 UNKNOWN。
+2. SCROLL 方向语义：type 已对，但方向匹配仍全错。
+3. OPEN_APP/WAIT 口径：应继续与普通 GUI action 分开报告。
+
+因此，下一轮仍建议继续做测试代码修正和 prompt/action contract 校准；在这些口径稳定前，不建议开始量化、serving backend、batching 等算法或系统优化对比。

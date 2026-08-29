@@ -20,7 +20,8 @@ from androidcontrol_actions import action_type, actions_match, canonicalize_acti
 from hf_gui_baseline import DEFAULT_MODEL_PATH, infer_one, load_model_and_processor
 
 
-GUI_ONLY_EXCLUDED_TYPES = {"OPEN_APP", "WAIT"}
+TRANSITION_OR_NOOP_TYPES = {"OPEN_APP", "WAIT"}
+GUI_ONLY_EXCLUDED_TYPES = TRANSITION_OR_NOOP_TYPES
 
 
 def load_samples(path: Path) -> List[Dict[str, Any]]:
@@ -114,11 +115,31 @@ def summarize_metric_view(
     }
 
 
+def metric_group_for_type(gt_type: str) -> str:
+    if gt_type == "OPEN_APP":
+        return "open_app"
+    if gt_type == "WAIT":
+        return "wait"
+    return "gui_only"
+
+
+def metric_view_policy() -> Dict[str, str]:
+    return {
+        "strict": "All AndroidControl steps; kept for compatibility with earlier results.",
+        "gui_only": "Ordinary GUI manipulation steps, excluding OPEN_APP and WAIT.",
+        "transition_or_noop": "OPEN_APP and WAIT steps reported separately because static single-frame matching is noisy or environment-level.",
+        "open_app": "Environment-level app launch requests only.",
+        "wait": "Static wait/no-op requests only.",
+        "by_gt_type": "Per ground-truth action type breakdown.",
+    }
+
+
 def build_metric_views(details: List[Dict[str, Any]]) -> Dict[str, Any]:
     gt_types = sorted({str(item.get("gt_type") or "UNKNOWN") for item in details})
     return {
         "strict": summarize_metric_view(details),
         "gui_only": summarize_metric_view(details, exclude_types=GUI_ONLY_EXCLUDED_TYPES),
+        "transition_or_noop": summarize_metric_view(details, include_types=TRANSITION_OR_NOOP_TYPES),
         "open_app": summarize_metric_view(details, include_types={"OPEN_APP"}),
         "wait": summarize_metric_view(details, include_types={"WAIT"}),
         "by_gt_type": {
@@ -157,6 +178,7 @@ def evaluate_records(
         gt_type = action_type(gt_action)
         type_ok = pred_type == gt_type
         step_ok = actions_match(pred_action, gt_action, point_tolerance=point_tolerance)
+        metric_group = metric_group_for_type(gt_type)
         details.append(
             {
                 "episode_id": sample.get("episode_id"),
@@ -168,6 +190,9 @@ def evaluate_records(
                 "pred_action": pred_action,
                 "gt_type": gt_type,
                 "pred_type": pred_type,
+                "metric_group": metric_group,
+                "strict_included": True,
+                "gui_only_included": metric_group == "gui_only",
                 "type_success": type_ok,
                 "step_success": step_ok,
                 "latency_seconds": result.latency_seconds,
@@ -182,7 +207,13 @@ def evaluate_records(
         )
 
     views = build_metric_views(details)
-    metrics = {**views["strict"], "views": views, **peak_gpu_memory()}
+    metrics = {
+        **views["strict"],
+        "primary_metric_view": "gui_only",
+        "metric_view_policy": metric_view_policy(),
+        "views": views,
+        **peak_gpu_memory(),
+    }
     return {"metrics": metrics, "details": details}
 
 
