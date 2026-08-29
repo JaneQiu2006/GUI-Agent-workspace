@@ -39,14 +39,21 @@ def peak_gpu_memory() -> Dict[str, Any]:
     if not torch.cuda.is_available():
         return {}
     per_device = {}
+    warnings = []
     for index in range(torch.cuda.device_count()):
-        per_device[str(index)] = int(torch.cuda.max_memory_allocated(index))
-    return {
+        try:
+            per_device[str(index)] = int(torch.cuda.max_memory_allocated(index))
+        except RuntimeError as exc:
+            warnings.append(f"cuda:{index}: {exc}")
+    metrics = {
         "peak_gpu_memory_bytes": per_device,
         "peak_gpu_memory_gb": {
             key: round(value / 1024**3, 4) for key, value in per_device.items()
         },
     }
+    if warnings:
+        metrics["gpu_memory_warnings"] = warnings
+    return metrics
 
 
 def reset_peak_gpu_memory() -> None:
@@ -56,7 +63,14 @@ def reset_peak_gpu_memory() -> None:
         return
     if torch.cuda.is_available():
         for index in range(torch.cuda.device_count()):
-            torch.cuda.reset_peak_memory_stats(index)
+            try:
+                torch.cuda.reset_peak_memory_stats(index)
+            except RuntimeError as exc:
+                print(
+                    f"GPU_MEMORY_WARNING reset_peak_memory_stats(cuda:{index}) failed: {exc}",
+                    file=sys.stderr,
+                    flush=True,
+                )
 
 
 def evaluate_records(
