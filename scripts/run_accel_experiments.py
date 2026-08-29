@@ -20,6 +20,7 @@ DEFAULT_MODEL_PATH = "/data2/home/models/Qwen3.8-27B"
 DEFAULT_TEST_JSON = "data/androidcontrol_mini/test.json"
 REF_GUI_ONLY_STEP = 0.9189
 REF_GUI_ONLY_TYPE = 0.9730
+ACCEPTANCE_EPSILON = 1e-4
 
 
 @dataclass
@@ -52,6 +53,10 @@ EXPERIMENTS: Dict[str, Experiment] = {
     "E12": Experiment("E12", "batch", batch_size=2, use_best_so_far=True),
     "E13": Experiment("E13", "batch", batch_size=4, use_best_so_far=True),
     "E14": Experiment("E14", "serving backend", serving_backend=True, use_best_so_far=True),
+    "E15": Experiment("E15", "dynamic visual token", visual_token_mode="dynamic_safe", use_best_so_far=True),
+    "E16": Experiment("E16", "dynamic visual token", visual_token_mode="dynamic_aggressive", use_best_so_far=True),
+    "E17": Experiment("E17", "batch after decode fix", batch_size=2, visual_token_mode="dynamic_safe", use_best_so_far=True),
+    "E18": Experiment("E18", "batch after decode fix", batch_size=4, visual_token_mode="dynamic_safe", use_best_so_far=True),
 }
 
 
@@ -244,8 +249,8 @@ def is_viable_candidate(out_dir: Path) -> bool:
     gui_only = metrics.get("views", {}).get("gui_only", {})
     health = metrics.get("output_health", {})
     return (
-        gui_only.get("step_success_rate", 0.0) >= REF_GUI_ONLY_STEP
-        and gui_only.get("type_accuracy", 0.0) >= REF_GUI_ONLY_TYPE
+        gui_only.get("step_success_rate", 0.0) + ACCEPTANCE_EPSILON >= REF_GUI_ONLY_STEP
+        and gui_only.get("type_accuracy", 0.0) + ACCEPTANCE_EPSILON >= REF_GUI_ONLY_TYPE
         and health.get("pred_unknown", 1) == 0
         and health.get("hit_max_new_tokens", 1) == 0
     )

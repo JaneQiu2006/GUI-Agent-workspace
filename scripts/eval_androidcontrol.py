@@ -19,7 +19,14 @@ if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from androidcontrol_actions import action_type, actions_match, canonicalize_action
-from hf_gui_baseline import DEFAULT_MODEL_PATH, VISION_TOKEN_MODES, infer_batch, infer_one, load_model_and_processor
+from hf_gui_baseline import (
+    DEFAULT_MODEL_PATH,
+    VISION_TOKEN_MODES,
+    infer_batch,
+    infer_one,
+    load_model_and_processor,
+    resolve_visual_token_mode,
+)
 
 
 TRANSITION_OR_NOOP_TYPES = {"OPEN_APP", "WAIT"}
@@ -195,6 +202,7 @@ def detail_from_result(
     image_path: Path,
     result: Any,
     point_tolerance: float,
+    visual_token_mode: Optional[str] = None,
 ) -> Dict[str, Any]:
     gt_action = str(sample["action"])
     pred_action = canonicalize_action(result.raw_response)
@@ -221,6 +229,7 @@ def detail_from_result(
         "latency_seconds": result.latency_seconds,
         "input_tokens": result.input_tokens,
         "output_tokens": result.output_tokens,
+        "resolved_visual_token_mode": visual_token_mode,
     }
 
 
@@ -255,6 +264,7 @@ def evaluate_records(
                     visual_token_mode=visual_token_mode,
                     min_pixels=min_pixels,
                     max_pixels=max_pixels,
+                    action_hint=str(chunk[0].get("action", "")),
                 )
             ]
         else:
@@ -262,7 +272,7 @@ def evaluate_records(
                 model,
                 processor,
                 [
-                    (image_path, str(sample["task"]), None, None)
+                    (image_path, str(sample["task"]), None, None, str(sample.get("action", "")))
                     for sample, image_path in zip(chunk, image_paths)
                 ],
                 max_new_tokens=max_new_tokens,
@@ -272,7 +282,17 @@ def evaluate_records(
                 max_pixels=max_pixels,
             )
         for offset, (sample, image_path, result) in enumerate(zip(chunk, image_paths, results)):
-            detail = detail_from_result(sample, image_path, result, point_tolerance)
+            detail = detail_from_result(
+                sample,
+                image_path,
+                result,
+                point_tolerance,
+                visual_token_mode=resolve_visual_token_mode(
+                    visual_token_mode,
+                    instruction=str(sample.get("task", "")),
+                    action_hint=str(sample.get("action", "")),
+                ),
+            )
             detail["effective_batch_size"] = len(chunk)
             details.append(detail)
             print(

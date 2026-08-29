@@ -61,6 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--visual_token_mode", default="default", choices=tuple(VISION_TOKEN_MODES))
     parser.add_argument("--min_pixels", type=int)
     parser.add_argument("--max_pixels", type=int)
+    parser.add_argument("--action_hint", help="Optional action hint for dynamic visual token modes")
     return parser
 
 
@@ -91,6 +92,7 @@ def main() -> int:
             visual_token_mode=args.visual_token_mode,
             min_pixels=args.min_pixels,
             max_pixels=args.max_pixels,
+            action_hint=args.action_hint,
         )
 
     warnings = reset_gpu_memory_stats()
@@ -110,6 +112,7 @@ def main() -> int:
             visual_token_mode=args.visual_token_mode,
             min_pixels=args.min_pixels,
             max_pixels=args.max_pixels,
+            action_hint=args.action_hint,
         )
         runs.append(
             {
@@ -140,6 +143,7 @@ def main() -> int:
             "visual_token_mode": args.visual_token_mode,
             "min_pixels": args.min_pixels,
             "max_pixels": args.max_pixels,
+            "action_hint": args.action_hint,
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
         "load_seconds": load_seconds,

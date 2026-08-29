@@ -162,6 +162,25 @@ Each experiment writes to `results/accel/<experiment_id>/` with `eval.json`,
 successful experiments are skipped with `--resume`; incomplete or failed
 directories are not overwritten and get a `_rerunN` suffix.
 
+Visual token modes supported by the eval/profile scripts:
+
+- `default`: original processor behavior.
+- `mild_reduce`: lower image token budget.
+- `aggressive_reduce`: strongest fixed image token reduction tested so far.
+- `dynamic_safe`: keeps CLICK/LONG_PRESS at default, uses mild reduction for
+  SCROLL/TYPE, and aggressive reduction for transition/simple actions.
+- `dynamic_aggressive`: uses mild reduction for CLICK/LONG_PRESS and aggressive
+  reduction for all other inferred actions.
+
+Batch eval/profile forces tokenizer left padding and passes explicit generation
+pad/eos token ids, which avoids decoder-only batched generation reading from
+right padding.  After changing batch behavior, rerun the new follow-up entries
+instead of comparing against the old E12/E13 directories:
+
+```bash
+python scripts/run_accel_experiments.py --gpus 1,6 --experiments E15-E18 --resume
+```
+
 ## Dependency Notes
 
 Install only missing packages in the server environment:

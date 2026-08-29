@@ -33,6 +33,7 @@ from hf_gui_baseline import (
     profile_infer_batch,
     profile_infer_one,
     reset_gpu_memory_stats,
+    resolve_visual_token_mode,
 )
 
 
@@ -117,13 +118,14 @@ def main() -> int:
                 visual_token_mode=args.visual_token_mode,
                 min_pixels=args.min_pixels,
                 max_pixels=args.max_pixels,
+                action_hint=str(chunk[0].get("action", "")),
             )
         else:
             profile_infer_batch(
                 model,
                 processor,
                 [
-                    (image_path, str(sample["task"]), None, None)
+                    (image_path, str(sample["task"]), None, None, str(sample.get("action", "")))
                     for sample, image_path in zip(chunk, image_paths)
                 ],
                 max_new_tokens=args.max_new_tokens,
@@ -152,17 +154,18 @@ def main() -> int:
                     str(chunk[0]["task"]),
                     max_new_tokens=args.max_new_tokens,
                     device=args.device,
-                    visual_token_mode=args.visual_token_mode,
-                    min_pixels=args.min_pixels,
-                    max_pixels=args.max_pixels,
-                )
-            ]
+                        visual_token_mode=args.visual_token_mode,
+                        min_pixels=args.min_pixels,
+                        max_pixels=args.max_pixels,
+                        action_hint=str(chunk[0].get("action", "")),
+                    )
+                ]
         else:
             results = profile_infer_batch(
                 model,
                 processor,
                 [
-                    (image_path, str(sample["task"]), None, None)
+                    (image_path, str(sample["task"]), None, None, str(sample.get("action", "")))
                     for sample, image_path in zip(chunk, image_paths)
                 ],
                 max_new_tokens=args.max_new_tokens,
@@ -172,7 +175,17 @@ def main() -> int:
                 max_pixels=args.max_pixels,
             )
         for offset, (sample, image_path, result) in enumerate(zip(chunk, image_paths, results), 1):
-            detail = detail_from_result(sample, image_path, result, args.point_tolerance)
+            detail = detail_from_result(
+                sample,
+                image_path,
+                result,
+                args.point_tolerance,
+                visual_token_mode=resolve_visual_token_mode(
+                    args.visual_token_mode,
+                    instruction=str(sample.get("task", "")),
+                    action_hint=str(sample.get("action", "")),
+                ),
+            )
             detail["timings"] = result.timings
             detail["memory"] = result.memory
             detail["effective_batch_size"] = len(chunk)

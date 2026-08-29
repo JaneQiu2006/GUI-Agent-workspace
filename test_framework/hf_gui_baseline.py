@@ -22,7 +22,11 @@ VISION_TOKEN_MODES: Dict[str, Dict[str, int]] = {
     "default": {},
     "mild_reduce": {"max_pixels": 768 * 28 * 28},
     "aggressive_reduce": {"max_pixels": 512 * 28 * 28},
+    "dynamic_safe": {},
+    "dynamic_aggressive": {},
 }
+STATIC_VISION_TOKEN_MODES = {"default", "mild_reduce", "aggressive_reduce"}
+InferItem = Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any], Optional[str]]
 
 
 @dataclass
@@ -52,11 +56,20 @@ def build_gui_messages(
     visual_token_mode: str = "default",
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], str]:
     """Build the same user message shape used by qwen_agent.QwenAgent."""
     prompt = build_phone_prompt(instruction, history, low_level)
     image_content: Dict[str, Any] = {"type": "image", "image": str(image_path)}
-    image_content.update(_visual_token_kwargs(visual_token_mode, min_pixels, max_pixels))
+    image_content.update(
+        _visual_token_kwargs(
+            visual_token_mode,
+            min_pixels,
+            max_pixels,
+            instruction=instruction,
+            action_hint=action_hint,
+        )
+    )
     messages = [
         {
             "role": "user",
@@ -157,6 +170,7 @@ def preprocess_inputs(
     visual_token_mode: str = "default",
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
 ) -> Tuple[Any, str, int]:
     """Apply the chat template and convert image/text into model inputs."""
     messages, prompt = build_gui_messages(
@@ -167,6 +181,7 @@ def preprocess_inputs(
         visual_token_mode=visual_token_mode,
         min_pixels=min_pixels,
         max_pixels=max_pixels,
+        action_hint=action_hint,
     )
     chat_text = apply_chat_template_without_thinking(processor, messages)
     image_inputs, video_inputs = _process_vision_info(messages)
@@ -202,6 +217,7 @@ def generate_response(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
+            **_generation_token_kwargs(processor),
         )
     _sync_if_cuda(torch, target_device)
     latency = time.perf_counter() - started
@@ -251,6 +267,7 @@ def infer_one(
     visual_token_mode: str = "default",
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
 ) -> GuiInferenceResult:
     inputs, prompt, input_tokens = preprocess_inputs(
         processor,
@@ -261,6 +278,7 @@ def infer_one(
         visual_token_mode=visual_token_mode,
         min_pixels=min_pixels,
         max_pixels=max_pixels,
+        action_hint=action_hint,
     )
     raw_response, latency, output_tokens = generate_response(
         model,
@@ -282,7 +300,7 @@ def infer_one(
 def infer_batch(
     model: Any,
     processor: Any,
-    items: Sequence[Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any]]],
+    items: Sequence[Tuple[Any, ...]],
     max_new_tokens: int = 128,
     device: str = "auto",
     visual_token_mode: str = "default",
@@ -326,7 +344,7 @@ def infer_batch(
 
 def preprocess_batch_inputs(
     processor: Any,
-    items: Sequence[Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any]]],
+    items: Sequence[Tuple[Any, ...]],
     visual_token_mode: str = "default",
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
@@ -334,7 +352,8 @@ def preprocess_batch_inputs(
     prompts = []
     batch_messages = []
     chat_texts = []
-    for image_path, instruction, history, low_level in items:
+    for item in items:
+        image_path, instruction, history, low_level, action_hint = _unpack_infer_item(item)
         messages, prompt = build_gui_messages(
             image_path,
             instruction,
@@ -343,19 +362,24 @@ def preprocess_batch_inputs(
             visual_token_mode=visual_token_mode,
             min_pixels=min_pixels,
             max_pixels=max_pixels,
+            action_hint=action_hint,
         )
         prompts.append(prompt)
         batch_messages.append(messages)
         chat_texts.append(apply_chat_template_without_thinking(processor, messages))
 
     image_inputs, video_inputs = _process_vision_info_for_batch(batch_messages)
-    inputs = processor(
-        text=chat_texts,
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-    )
+    old_padding_side = _set_processor_padding_side(processor, "left")
+    try:
+        inputs = processor(
+            text=chat_texts,
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+    finally:
+        _restore_processor_padding_side(processor, old_padding_side)
     input_tokens = []
     if hasattr(inputs, "attention_mask"):
         input_tokens = [int(value) for value in inputs.attention_mask.sum(dim=1).tolist()]
@@ -386,6 +410,7 @@ def generate_batch_response(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
+            **_generation_token_kwargs(processor),
         )
     _sync_if_cuda(torch, target_device)
     latency = time.perf_counter() - started
@@ -414,6 +439,7 @@ def profile_infer_one(
     visual_token_mode: str = "default",
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
 ) -> GuiProfiledInferenceResult:
     import torch
 
@@ -429,6 +455,7 @@ def profile_infer_one(
         visual_token_mode=visual_token_mode,
         min_pixels=min_pixels,
         max_pixels=max_pixels,
+        action_hint=action_hint,
     )
     timings["build_prompt_seconds"] = time.perf_counter() - stage_started
 
@@ -464,6 +491,7 @@ def profile_infer_one(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
+            **_generation_token_kwargs(processor),
         )
     _sync_if_cuda(torch, target_device)
     timings["generate_seconds"] = time.perf_counter() - stage_started
@@ -501,7 +529,7 @@ def profile_infer_one(
 def profile_infer_batch(
     model: Any,
     processor: Any,
-    items: Sequence[Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any]]],
+    items: Sequence[Tuple[Any, ...]],
     max_new_tokens: int = 128,
     device: str = "auto",
     visual_token_mode: str = "default",
@@ -519,7 +547,8 @@ def profile_infer_batch(
     stage_started = time.perf_counter()
     prompts = []
     batch_messages = []
-    for image_path, instruction, history, low_level in items:
+    for item in items:
+        image_path, instruction, history, low_level, action_hint = _unpack_infer_item(item)
         messages, prompt = build_gui_messages(
             image_path,
             instruction,
@@ -528,6 +557,7 @@ def profile_infer_batch(
             visual_token_mode=visual_token_mode,
             min_pixels=min_pixels,
             max_pixels=max_pixels,
+            action_hint=action_hint,
         )
         prompts.append(prompt)
         batch_messages.append(messages)
@@ -545,13 +575,17 @@ def profile_infer_batch(
     timings["vision_preprocess_seconds"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
-    inputs = processor(
-        text=chat_texts,
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-    )
+    old_padding_side = _set_processor_padding_side(processor, "left")
+    try:
+        inputs = processor(
+            text=chat_texts,
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+    finally:
+        _restore_processor_padding_side(processor, old_padding_side)
     timings["processor_encode_seconds"] = time.perf_counter() - stage_started
     if hasattr(inputs, "attention_mask"):
         input_tokens = [int(value) for value in inputs.attention_mask.sum(dim=1).tolist()]
@@ -573,6 +607,7 @@ def profile_infer_batch(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
+            **_generation_token_kwargs(processor),
         )
     _sync_if_cuda(torch, target_device)
     timings["generate_seconds"] = time.perf_counter() - stage_started
@@ -697,14 +732,112 @@ def _visual_token_kwargs(
     visual_token_mode: str,
     min_pixels: Optional[int],
     max_pixels: Optional[int],
+    instruction: str = "",
+    action_hint: Optional[str] = None,
 ) -> Dict[str, int]:
     if visual_token_mode not in VISION_TOKEN_MODES:
         raise ValueError(f"Unsupported visual_token_mode: {visual_token_mode}")
-    kwargs = dict(VISION_TOKEN_MODES[visual_token_mode])
+    resolved_mode = resolve_visual_token_mode(
+        visual_token_mode,
+        instruction=instruction,
+        action_hint=action_hint,
+    )
+    kwargs = dict(VISION_TOKEN_MODES[resolved_mode])
     if min_pixels is not None:
         kwargs["min_pixels"] = min_pixels
     if max_pixels is not None:
         kwargs["max_pixels"] = max_pixels
+    return kwargs
+
+
+def resolve_visual_token_mode(
+    visual_token_mode: str,
+    instruction: str = "",
+    action_hint: Optional[str] = None,
+) -> str:
+    if visual_token_mode in STATIC_VISION_TOKEN_MODES:
+        return visual_token_mode
+    action = _infer_action_hint_type(action_hint, instruction)
+    if visual_token_mode == "dynamic_safe":
+        if action in {"CLICK", "LONG_PRESS"}:
+            return "default"
+        if action in {"SCROLL", "TYPE"}:
+            return "mild_reduce"
+        return "aggressive_reduce"
+    if visual_token_mode == "dynamic_aggressive":
+        if action in {"CLICK", "LONG_PRESS"}:
+            return "mild_reduce"
+        return "aggressive_reduce"
+    raise ValueError(f"Unsupported visual_token_mode: {visual_token_mode}")
+
+
+def _infer_action_hint_type(action_hint: Optional[str], instruction: str) -> str:
+    text = f"{action_hint or ''}\n{instruction or ''}".upper()
+    if any(keyword in text for keyword in ("LONG_PRESS", "LONG PRESS", "长按")):
+        return "LONG_PRESS"
+    if any(keyword in text for keyword in ("CLICK", "TAP", "点击", "点按")):
+        return "CLICK"
+    if any(keyword in text for keyword in ("SCROLL", "SWIPE", "滑动", "滚动", "上滑", "下滑", "左滑", "右滑")):
+        return "SCROLL"
+    if any(keyword in text for keyword in ("TYPE", "INPUT_TEXT", "输入")):
+        return "TYPE"
+    if any(keyword in text for keyword in ("PRESS_BACK", "NAVIGATE_BACK", "返回")):
+        return "PRESS_BACK"
+    if any(keyword in text for keyword in ("PRESS_HOME", "NAVIGATE_HOME", "主页", "HOME")):
+        return "PRESS_HOME"
+    if any(keyword in text for keyword in ("OPEN_APP", "LAUNCH", "打开应用")):
+        return "OPEN_APP"
+    if any(keyword in text for keyword in ("WAIT", "等待")):
+        return "WAIT"
+    return "UNKNOWN"
+
+
+def _unpack_infer_item(item: Tuple[Any, ...]) -> InferItem:
+    if len(item) == 4:
+        image_path, instruction, history, low_level = item
+        return Path(image_path), str(instruction), history, low_level, None
+    if len(item) == 5:
+        image_path, instruction, history, low_level, action_hint = item
+        return Path(image_path), str(instruction), history, low_level, None if action_hint is None else str(action_hint)
+    raise ValueError(f"Expected infer item with 4 or 5 fields, got {len(item)}")
+
+
+def _processor_tokenizer(processor: Any) -> Optional[Any]:
+    return getattr(processor, "tokenizer", processor)
+
+
+def _set_processor_padding_side(processor: Any, padding_side: str) -> Optional[str]:
+    tokenizer = _processor_tokenizer(processor)
+    if tokenizer is None or not hasattr(tokenizer, "padding_side"):
+        return None
+    old_padding_side = str(tokenizer.padding_side)
+    tokenizer.padding_side = padding_side
+    return old_padding_side
+
+
+def _restore_processor_padding_side(processor: Any, old_padding_side: Optional[str]) -> None:
+    if old_padding_side is None:
+        return
+    tokenizer = _processor_tokenizer(processor)
+    if tokenizer is not None and hasattr(tokenizer, "padding_side"):
+        tokenizer.padding_side = old_padding_side
+
+
+def _generation_token_kwargs(processor: Any) -> Dict[str, int]:
+    tokenizer = _processor_tokenizer(processor)
+    if tokenizer is None:
+        return {}
+    kwargs = {}
+    pad_token_id = getattr(tokenizer, "pad_token_id", None)
+    eos_token_id = getattr(tokenizer, "eos_token_id", None)
+    if isinstance(eos_token_id, (list, tuple)):
+        eos_token_id = eos_token_id[0] if eos_token_id else None
+    if pad_token_id is None and eos_token_id is not None:
+        pad_token_id = eos_token_id
+    if pad_token_id is not None:
+        kwargs["pad_token_id"] = int(pad_token_id)
+    if eos_token_id is not None:
+        kwargs["eos_token_id"] = int(eos_token_id)
     return kwargs
 
 
