@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +18,9 @@ if str(Path(__file__).resolve().parent) not in sys.path:
 
 from androidcontrol_actions import action_type, actions_match, canonicalize_action
 from hf_gui_baseline import DEFAULT_MODEL_PATH, infer_one, load_model_and_processor
+
+
+GUI_ONLY_EXCLUDED_TYPES = {"OPEN_APP", "WAIT"}
 
 
 def load_samples(path: Path) -> List[Dict[str, Any]]:
@@ -73,6 +76,58 @@ def reset_peak_gpu_memory() -> None:
                 )
 
 
+def summarize_metric_view(
+    details: List[Dict[str, Any]],
+    include_types: Optional[Set[str]] = None,
+    exclude_types: Optional[Set[str]] = None,
+) -> Dict[str, Any]:
+    selected = []
+    for item in details:
+        gt_type = str(item.get("gt_type") or "")
+        if include_types is not None and gt_type not in include_types:
+            continue
+        if exclude_types is not None and gt_type in exclude_types:
+            continue
+        selected.append(item)
+
+    count = len(selected)
+    type_hits = sum(1 for item in selected if item.get("type_success"))
+    step_hits = sum(1 for item in selected if item.get("step_success"))
+    latencies = [float(item["latency_seconds"]) for item in selected if item.get("latency_seconds") is not None]
+    output_tokens = [float(item["output_tokens"]) for item in selected if item.get("output_tokens") is not None]
+    input_tokens = [float(item["input_tokens"]) for item in selected if item.get("input_tokens") is not None]
+    episode_success: Dict[str, List[bool]] = defaultdict(list)
+    for item in selected:
+        episode_key = str(item.get("episode_id", item.get("step_id", "")))
+        episode_success[episode_key].append(bool(item.get("step_success")))
+
+    successful_trajectories = sum(1 for values in episode_success.values() if values and all(values))
+    return {
+        "num_steps": count,
+        "num_trajectories": len(episode_success),
+        "type_accuracy": type_hits / count if count else 0.0,
+        "step_success_rate": step_hits / count if count else 0.0,
+        "trajectory_success_rate": successful_trajectories / len(episode_success) if episode_success else 0.0,
+        "avg_latency_seconds": sum(latencies) / len(latencies) if latencies else 0.0,
+        "avg_input_tokens": sum(input_tokens) / len(input_tokens) if input_tokens else 0.0,
+        "avg_output_tokens": sum(output_tokens) / len(output_tokens) if output_tokens else 0.0,
+    }
+
+
+def build_metric_views(details: List[Dict[str, Any]]) -> Dict[str, Any]:
+    gt_types = sorted({str(item.get("gt_type") or "UNKNOWN") for item in details})
+    return {
+        "strict": summarize_metric_view(details),
+        "gui_only": summarize_metric_view(details, exclude_types=GUI_ONLY_EXCLUDED_TYPES),
+        "open_app": summarize_metric_view(details, include_types={"OPEN_APP"}),
+        "wait": summarize_metric_view(details, include_types={"WAIT"}),
+        "by_gt_type": {
+            gt_type: summarize_metric_view(details, include_types={gt_type})
+            for gt_type in gt_types
+        },
+    }
+
+
 def evaluate_records(
     records: List[Dict[str, Any]],
     model: Any,
@@ -83,11 +138,6 @@ def evaluate_records(
     point_tolerance: float,
 ) -> Dict[str, Any]:
     details = []
-    type_hits = 0
-    step_hits = 0
-    latencies = []
-    output_tokens = []
-    episode_success: Dict[str, List[bool]] = defaultdict(list)
 
     for index, sample in enumerate(records):
         image_path = Path(str(sample["image_path"]))
@@ -107,13 +157,6 @@ def evaluate_records(
         gt_type = action_type(gt_action)
         type_ok = pred_type == gt_type
         step_ok = actions_match(pred_action, gt_action, point_tolerance=point_tolerance)
-        type_hits += int(type_ok)
-        step_hits += int(step_ok)
-        latencies.append(result.latency_seconds)
-        if result.output_tokens is not None:
-            output_tokens.append(result.output_tokens)
-        episode_key = str(sample.get("episode_id", index))
-        episode_success[episode_key].append(step_ok)
         details.append(
             {
                 "episode_id": sample.get("episode_id"),
@@ -138,18 +181,8 @@ def evaluate_records(
             flush=True,
         )
 
-    count = len(records)
-    successful_trajectories = sum(1 for values in episode_success.values() if values and all(values))
-    metrics = {
-        "num_steps": count,
-        "num_trajectories": len(episode_success),
-        "type_accuracy": type_hits / count if count else 0.0,
-        "step_success_rate": step_hits / count if count else 0.0,
-        "trajectory_success_rate": successful_trajectories / len(episode_success) if episode_success else 0.0,
-        "avg_latency_seconds": sum(latencies) / len(latencies) if latencies else 0.0,
-        "avg_output_tokens": sum(output_tokens) / len(output_tokens) if output_tokens else 0.0,
-        **peak_gpu_memory(),
-    }
+    views = build_metric_views(details)
+    metrics = {**views["strict"], "views": views, **peak_gpu_memory()}
     return {"metrics": metrics, "details": details}
 
 

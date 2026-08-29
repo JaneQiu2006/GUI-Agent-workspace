@@ -159,11 +159,7 @@ def preprocess_inputs(
 ) -> Tuple[Any, str, int]:
     """Apply the chat template and convert image/text into model inputs."""
     messages, prompt = build_gui_messages(image_path, instruction, history, low_level)
-    chat_text = processor.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
+    chat_text = apply_chat_template_without_thinking(processor, messages)
     image_inputs, video_inputs = _process_vision_info(messages)
     inputs = processor(
         text=[chat_text],
@@ -215,6 +211,23 @@ def generate_response(
 
 def postprocess_response(raw_response: str) -> Dict[str, Any]:
     return parse_action(raw_response)
+
+
+def apply_chat_template_without_thinking(processor: Any, messages: List[Dict[str, Any]]) -> str:
+    """Use Qwen-style no-thinking templates when the processor supports it."""
+    try:
+        return processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+    except TypeError:
+        return processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
 
 
 def infer_one(
@@ -271,11 +284,7 @@ def profile_infer_one(
     timings["build_prompt_seconds"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
-    chat_text = processor.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
+    chat_text = apply_chat_template_without_thinking(processor, messages)
     timings["apply_chat_template_seconds"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()

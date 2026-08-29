@@ -18,7 +18,7 @@ for path in (TEST_FRAMEWORK, SCRIPT_DIR):
         sys.path.insert(0, str(path))
 
 from androidcontrol_actions import action_type, actions_match, canonicalize_action
-from eval_androidcontrol import load_samples
+from eval_androidcontrol import build_metric_views, load_samples
 from hf_gui_baseline import (
     DEFAULT_MODEL_PATH,
     gpu_memory_snapshot,
@@ -41,12 +41,10 @@ def summarize_details(details: List[Dict[str, Any]]) -> Dict[str, Any]:
         }
     output_values = [item["output_tokens"] for item in details if item.get("output_tokens") is not None]
     input_values = [item["input_tokens"] for item in details if item.get("input_tokens") is not None]
-    type_hits = sum(1 for item in details if item["type_success"])
-    step_hits = sum(1 for item in details if item["step_success"])
+    views = build_metric_views(details)
     return {
-        "num_steps": len(details),
-        "type_accuracy": type_hits / len(details) if details else 0.0,
-        "step_success_rate": step_hits / len(details) if details else 0.0,
+        **views["strict"],
+        "views": views,
         "avg_input_tokens": statistics.fmean(input_values) if input_values else 0.0,
         "avg_output_tokens": statistics.fmean(output_values) if output_values else 0.0,
         "timings_seconds": timing_summary,
@@ -140,6 +138,7 @@ def main() -> int:
                 "pred_type": pred_type,
                 "type_success": type_ok,
                 "step_success": step_ok,
+                "latency_seconds": result.latency_seconds,
                 "input_tokens": result.input_tokens,
                 "output_tokens": result.output_tokens,
                 "timings": result.timings,
