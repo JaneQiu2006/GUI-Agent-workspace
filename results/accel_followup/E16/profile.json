@@ -1,0 +1,585 @@
+{
+  "config": {
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "test_json": "data/androidcontrol_mini/test.json",
+    "data_dir": "data/androidcontrol_mini",
+    "limit": 5,
+    "warmup": 1,
+    "max_new_tokens": 48,
+    "device": "auto",
+    "device_map": "auto",
+    "dtype": "auto",
+    "attn_implementation": null,
+    "batch_size": 1,
+    "visual_token_mode": "dynamic_aggressive",
+    "min_pixels": null,
+    "max_pixels": null,
+    "point_tolerance": 100.0,
+    "created_at": "2026-08-29T21:54:24.057736+00:00"
+  },
+  "load_seconds": 20.542192826978862,
+  "summary": {
+    "num_steps": 5,
+    "num_trajectories": 2,
+    "type_accuracy": 0.8,
+    "step_success_rate": 0.6,
+    "trajectory_success_rate": 0.5,
+    "avg_latency_seconds": 4.42597553562373,
+    "min_latency_seconds": 2.6557177640497684,
+    "median_latency_seconds": 4.595392381772399,
+    "max_latency_seconds": 5.768522407859564,
+    "avg_input_tokens": 1301.4,
+    "avg_output_tokens": 12.8,
+    "min_output_tokens": 6.0,
+    "median_output_tokens": 12.0,
+    "max_output_tokens": 18.0,
+    "primary_metric_view": "gui_only",
+    "metric_view_policy": {
+      "strict": "All AndroidControl steps; kept for compatibility with earlier results.",
+      "gui_only": "Ordinary GUI manipulation steps, excluding OPEN_APP and WAIT.",
+      "transition_or_noop": "OPEN_APP and WAIT steps reported separately because static single-frame matching is noisy or environment-level.",
+      "open_app": "Environment-level app launch requests only.",
+      "wait": "Static wait/no-op requests only.",
+      "by_gt_type": "Per ground-truth action type breakdown."
+    },
+    "views": {
+      "strict": {
+        "num_steps": 5,
+        "num_trajectories": 2,
+        "type_accuracy": 0.8,
+        "step_success_rate": 0.6,
+        "trajectory_success_rate": 0.5,
+        "avg_latency_seconds": 4.42597553562373,
+        "min_latency_seconds": 2.6557177640497684,
+        "median_latency_seconds": 4.595392381772399,
+        "max_latency_seconds": 5.768522407859564,
+        "avg_input_tokens": 1301.4,
+        "avg_output_tokens": 12.8,
+        "min_output_tokens": 6.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 18.0
+      },
+      "gui_only": {
+        "num_steps": 3,
+        "num_trajectories": 2,
+        "type_accuracy": 1.0,
+        "step_success_rate": 1.0,
+        "trajectory_success_rate": 1.0,
+        "avg_latency_seconds": 4.413765603055556,
+        "min_latency_seconds": 2.6557177640497684,
+        "median_latency_seconds": 4.817056637257338,
+        "max_latency_seconds": 5.768522407859564,
+        "avg_input_tokens": 1355.6666666666667,
+        "avg_output_tokens": 13.333333333333334,
+        "min_output_tokens": 6.0,
+        "median_output_tokens": 16.0,
+        "max_output_tokens": 18.0
+      },
+      "transition_or_noop": {
+        "num_steps": 2,
+        "num_trajectories": 1,
+        "type_accuracy": 0.5,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 4.444290434475988,
+        "min_latency_seconds": 4.293188487179577,
+        "median_latency_seconds": 4.444290434475988,
+        "max_latency_seconds": 4.595392381772399,
+        "avg_input_tokens": 1220.0,
+        "avg_output_tokens": 12.0,
+        "min_output_tokens": 12.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 12.0
+      },
+      "open_app": {
+        "num_steps": 1,
+        "num_trajectories": 1,
+        "type_accuracy": 1.0,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 4.595392381772399,
+        "min_latency_seconds": 4.595392381772399,
+        "median_latency_seconds": 4.595392381772399,
+        "max_latency_seconds": 4.595392381772399,
+        "avg_input_tokens": 1220.0,
+        "avg_output_tokens": 12.0,
+        "min_output_tokens": 12.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 12.0
+      },
+      "wait": {
+        "num_steps": 1,
+        "num_trajectories": 1,
+        "type_accuracy": 0.0,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 4.293188487179577,
+        "min_latency_seconds": 4.293188487179577,
+        "median_latency_seconds": 4.293188487179577,
+        "max_latency_seconds": 4.293188487179577,
+        "avg_input_tokens": 1220.0,
+        "avg_output_tokens": 12.0,
+        "min_output_tokens": 12.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 12.0
+      },
+      "by_gt_type": {
+        "CLICK": {
+          "num_steps": 2,
+          "num_trajectories": 2,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 5.292789522558451,
+          "min_latency_seconds": 4.817056637257338,
+          "median_latency_seconds": 5.292789522558451,
+          "max_latency_seconds": 5.768522407859564,
+          "avg_input_tokens": 1423.0,
+          "avg_output_tokens": 17.0,
+          "min_output_tokens": 16.0,
+          "median_output_tokens": 17.0,
+          "max_output_tokens": 18.0
+        },
+        "OPEN_APP": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 1.0,
+          "step_success_rate": 0.0,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 4.595392381772399,
+          "min_latency_seconds": 4.595392381772399,
+          "median_latency_seconds": 4.595392381772399,
+          "max_latency_seconds": 4.595392381772399,
+          "avg_input_tokens": 1220.0,
+          "avg_output_tokens": 12.0,
+          "min_output_tokens": 12.0,
+          "median_output_tokens": 12.0,
+          "max_output_tokens": 12.0
+        },
+        "PRESS_BACK": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 2.6557177640497684,
+          "min_latency_seconds": 2.6557177640497684,
+          "median_latency_seconds": 2.6557177640497684,
+          "max_latency_seconds": 2.6557177640497684,
+          "avg_input_tokens": 1221.0,
+          "avg_output_tokens": 6.0,
+          "min_output_tokens": 6.0,
+          "median_output_tokens": 6.0,
+          "max_output_tokens": 6.0
+        },
+        "WAIT": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 0.0,
+          "step_success_rate": 0.0,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 4.293188487179577,
+          "min_latency_seconds": 4.293188487179577,
+          "median_latency_seconds": 4.293188487179577,
+          "max_latency_seconds": 4.293188487179577,
+          "avg_input_tokens": 1220.0,
+          "avg_output_tokens": 12.0,
+          "min_output_tokens": 12.0,
+          "median_output_tokens": 12.0,
+          "max_output_tokens": 12.0
+        }
+      }
+    },
+    "timings_seconds": {
+      "apply_chat_template_seconds": {
+        "mean": 0.00037978477776050567,
+        "min": 0.0002288389950990677,
+        "max": 0.00054953433573246,
+        "median": 0.00040743034332990646
+      },
+      "build_prompt_seconds": {
+        "mean": 3.498159348964691e-05,
+        "min": 1.89291313290596e-05,
+        "max": 5.1633454859256744e-05,
+        "median": 3.76896932721138e-05
+      },
+      "decode_seconds": {
+        "mean": 0.0002726580947637558,
+        "min": 0.00016076024621725082,
+        "max": 0.00039200764149427414,
+        "median": 0.00030894577503204346
+      },
+      "generate_seconds": {
+        "mean": 4.42597553562373,
+        "min": 2.6557177640497684,
+        "max": 5.768522407859564,
+        "median": 4.595392381772399
+      },
+      "input_to_device_seconds": {
+        "mean": 0.008304865658283233,
+        "min": 0.0056306589394807816,
+        "max": 0.009331236593425274,
+        "median": 0.009136758744716644
+      },
+      "postprocess_seconds": {
+        "mean": 8.207503706216812e-05,
+        "min": 4.076492041349411e-05,
+        "max": 0.0001393621787428856,
+        "median": 9.177904576063156e-05
+      },
+      "processor_encode_seconds": {
+        "mean": 0.010884567722678184,
+        "min": 0.010331113822758198,
+        "max": 0.011509455740451813,
+        "median": 0.010664683766663074
+      },
+      "total_seconds": {
+        "mean": 4.528744311258197,
+        "min": 2.7600098475813866,
+        "max": 5.891443352214992,
+        "median": 4.704460710287094
+      },
+      "vision_preprocess_seconds": {
+        "mean": 0.08273887038230895,
+        "min": 0.06450852565467358,
+        "max": 0.10140069480985403,
+        "median": 0.08497973997145891
+      }
+    },
+    "output_health": {
+      "pred_unknown": 0,
+      "contains_think_end": 0,
+      "hit_max_new_tokens": 0,
+      "json_enclosed": 5,
+      "num_outputs": 5,
+      "avg_input_tokens": 1301.4,
+      "avg_output_tokens": 12.8,
+      "min_output_tokens": 6,
+      "median_output_tokens": 12,
+      "max_output_tokens": 18,
+      "malformed_parse_repair_count": null
+    },
+    "wall_clock_seconds": 22.649701698683202,
+    "samples_per_second": 0.2207534592073982,
+    "output_tokens_per_second": 2.825644277854697,
+    "effective_batch_size": 1
+  },
+  "final_memory": {
+    "allocated_bytes": {
+      "0": 25549097984,
+      "1": 29182155776
+    },
+    "reserved_bytes": {
+      "0": 26426212352,
+      "1": 30142365696
+    },
+    "peak_allocated_bytes": {
+      "0": 26170718720,
+      "1": 29773760000
+    },
+    "peak_reserved_bytes": {
+      "0": 26426212352,
+      "1": 30142365696
+    },
+    "peak_allocated_gb": {
+      "0": 24.3734,
+      "1": 27.729
+    },
+    "peak_reserved_gb": {
+      "0": 24.6113,
+      "1": 28.0723
+    }
+  },
+  "details": [
+    {
+      "episode_id": 0,
+      "step_id": 0,
+      "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Open the Zoho Meet app",
+      "image_path": "data/androidcontrol_mini/images/episode_0/step_0.png",
+      "gt_action": "OPEN_APP [Zoho Meeting]",
+      "raw_response": "{\"action\":\"open\",\"text\":\"Zoho Meet\"}",
+      "pred_action": "OPEN_APP [Zoho Meet]",
+      "gt_type": "OPEN_APP",
+      "pred_type": "OPEN_APP",
+      "metric_group": "open_app",
+      "strict_included": true,
+      "gui_only_included": false,
+      "type_success": true,
+      "step_success": false,
+      "latency_seconds": 4.595392381772399,
+      "input_tokens": 1220,
+      "output_tokens": 12,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 5.1633454859256744e-05,
+        "apply_chat_template_seconds": 0.00054953433573246,
+        "vision_preprocess_seconds": 0.08811644278466702,
+        "processor_encode_seconds": 0.010664683766663074,
+        "input_to_device_seconds": 0.009136758744716644,
+        "generate_seconds": 4.595392381772399,
+        "decode_seconds": 0.00033567193895578384,
+        "postprocess_seconds": 9.177904576063156e-05,
+        "total_seconds": 4.704460710287094
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25558404608,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 26243760128,
+          "1": 29842472960
+        },
+        "peak_allocated_bytes": {
+          "0": 26092626944,
+          "1": 29711588352
+        },
+        "peak_reserved_bytes": {
+          "0": 26243760128,
+          "1": 29842472960
+        },
+        "peak_allocated_gb": {
+          "0": 24.3007,
+          "1": 27.6711
+        },
+        "peak_reserved_gb": {
+          "0": 24.4414,
+          "1": 27.793
+        }
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 0,
+      "step_id": 1,
+      "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Open the Zoho Meet app",
+      "image_path": "data/androidcontrol_mini/images/episode_0/step_1.png",
+      "gt_action": "WAIT",
+      "raw_response": "{\"action\":\"open\",\"text\":\"Zoho Meet\"}",
+      "pred_action": "OPEN_APP [Zoho Meet]",
+      "gt_type": "WAIT",
+      "pred_type": "OPEN_APP",
+      "metric_group": "wait",
+      "strict_included": true,
+      "gui_only_included": false,
+      "type_success": false,
+      "step_success": false,
+      "latency_seconds": 4.293188487179577,
+      "input_tokens": 1220,
+      "output_tokens": 12,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 3.76896932721138e-05,
+        "apply_chat_template_seconds": 0.00040743034332990646,
+        "vision_preprocess_seconds": 0.06450852565467358,
+        "processor_encode_seconds": 0.011509455740451813,
+        "input_to_device_seconds": 0.0056306589394807816,
+        "generate_seconds": 4.293188487179577,
+        "decode_seconds": 0.00016590487211942673,
+        "postprocess_seconds": 4.076492041349411e-05,
+        "total_seconds": 4.375537486746907
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25558404608,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 26243760128,
+          "1": 29842472960
+        },
+        "peak_allocated_bytes": {
+          "0": 26092626944,
+          "1": 29711588352
+        },
+        "peak_reserved_bytes": {
+          "0": 26243760128,
+          "1": 29842472960
+        },
+        "peak_allocated_gb": {
+          "0": 24.3007,
+          "1": 27.6711
+        },
+        "peak_reserved_gb": {
+          "0": 24.4414,
+          "1": 27.793
+        }
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 0,
+      "step_id": 2,
+      "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Go to the Past section",
+      "image_path": "data/androidcontrol_mini/images/episode_0/step_2.png",
+      "gt_action": "CLICK <point>[[500,162]]</point>",
+      "raw_response": "{\"action\":\"tap\",\"x\":498,164}",
+      "pred_action": "CLICK <point>[[498,164]]</point>",
+      "gt_type": "CLICK",
+      "pred_type": "CLICK",
+      "metric_group": "gui_only",
+      "strict_included": true,
+      "gui_only_included": true,
+      "type_success": true,
+      "step_success": true,
+      "latency_seconds": 4.817056637257338,
+      "input_tokens": 1418,
+      "output_tokens": 16,
+      "resolved_visual_token_mode": "mild_reduce",
+      "timings": {
+        "build_prompt_seconds": 1.89291313290596e-05,
+        "apply_chat_template_seconds": 0.0002288389950990677,
+        "vision_preprocess_seconds": 0.07468894869089127,
+        "processor_encode_seconds": 0.010565214790403843,
+        "input_to_device_seconds": 0.009203668683767319,
+        "generate_seconds": 4.817056637257338,
+        "decode_seconds": 0.00030894577503204346,
+        "postprocess_seconds": 0.0001393621787428856,
+        "total_seconds": 4.912270159460604
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25563301376,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 26426212352,
+          "1": 30142365696
+        },
+        "peak_allocated_bytes": {
+          "0": 26169544192,
+          "1": 29772626944
+        },
+        "peak_reserved_bytes": {
+          "0": 26426212352,
+          "1": 30142365696
+        },
+        "peak_allocated_gb": {
+          "0": 24.3723,
+          "1": 27.7279
+        },
+        "peak_reserved_gb": {
+          "0": 24.6113,
+          "1": 28.0723
+        }
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 20,
+      "step_id": 0,
+      "task": "目标任务：Go to the mobile category after closing the pop up and browse the products\n当前步骤：Go to the previous page",
+      "image_path": "data/androidcontrol_mini/images/episode_20/step_0.png",
+      "gt_action": "PRESS_BACK",
+      "raw_response": "{\"action\":\"back\"}",
+      "pred_action": "PRESS_BACK",
+      "gt_type": "PRESS_BACK",
+      "pred_type": "PRESS_BACK",
+      "metric_group": "gui_only",
+      "strict_included": true,
+      "gui_only_included": true,
+      "type_success": true,
+      "step_success": true,
+      "latency_seconds": 2.6557177640497684,
+      "input_tokens": 1221,
+      "output_tokens": 6,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 4.035979509353638e-05,
+        "apply_chat_template_seconds": 0.00046230852603912354,
+        "vision_preprocess_seconds": 0.08497973997145891,
+        "processor_encode_seconds": 0.010331113822758198,
+        "input_to_device_seconds": 0.00822200533002615,
+        "generate_seconds": 2.6557177640497684,
+        "decode_seconds": 0.00016076024621725082,
+        "postprocess_seconds": 4.568323493003845e-05,
+        "total_seconds": 2.7600098475813866
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25558404608,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 26426212352,
+          "1": 30142365696
+        },
+        "peak_allocated_bytes": {
+          "0": 26169544192,
+          "1": 29772626944
+        },
+        "peak_reserved_bytes": {
+          "0": 26426212352,
+          "1": 30142365696
+        },
+        "peak_allocated_gb": {
+          "0": 24.3723,
+          "1": 27.7279
+        },
+        "peak_reserved_gb": {
+          "0": 24.6113,
+          "1": 28.0723
+        }
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 20,
+      "step_id": 1,
+      "task": "目标任务：Go to the mobile category after closing the pop up and browse the products\n当前步骤：Click on the Mobile category at the top left corner of the screen",
+      "image_path": "data/androidcontrol_mini/images/episode_20/step_1.png",
+      "gt_action": "CLICK <point>[[102,211]]</point>",
+      "raw_response": "{\"action\":\"tap\",\"x\":100,\"y\":209}",
+      "pred_action": "CLICK <point>[[100,209]]</point>",
+      "gt_type": "CLICK",
+      "pred_type": "CLICK",
+      "metric_group": "gui_only",
+      "strict_included": true,
+      "gui_only_included": true,
+      "type_success": true,
+      "step_success": true,
+      "latency_seconds": 5.768522407859564,
+      "input_tokens": 1428,
+      "output_tokens": 18,
+      "resolved_visual_token_mode": "mild_reduce",
+      "timings": {
+        "build_prompt_seconds": 2.6295892894268036e-05,
+        "apply_chat_template_seconds": 0.00025081168860197067,
+        "vision_preprocess_seconds": 0.10140069480985403,
+        "processor_encode_seconds": 0.011352370493113995,
+        "input_to_device_seconds": 0.009331236593425274,
+        "generate_seconds": 5.768522407859564,
+        "decode_seconds": 0.00039200764149427414,
+        "postprocess_seconds": 9.27858054637909e-05,
+        "total_seconds": 5.891443352214992
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 25563301376,
+          "1": 29182155776
+        },
+        "reserved_bytes": {
+          "0": 26426212352,
+          "1": 30142365696
+        },
+        "peak_allocated_bytes": {
+          "0": 26170718720,
+          "1": 29773760000
+        },
+        "peak_reserved_bytes": {
+          "0": 26426212352,
+          "1": 30142365696
+        },
+        "peak_allocated_gb": {
+          "0": 24.3734,
+          "1": 27.729
+        },
+        "peak_reserved_gb": {
+          "0": 24.6113,
+          "1": 28.0723
+        }
+      },
+      "effective_batch_size": 1
+    }
+  ]
+}

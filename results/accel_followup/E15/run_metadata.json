@@ -1,0 +1,118 @@
+{
+  "experiment": {
+    "experiment_id": "E15",
+    "direction": "dynamic visual token",
+    "max_new_tokens": 48,
+    "dtype": "auto",
+    "attn_implementation": null,
+    "batch_size": 1,
+    "visual_token_mode": "dynamic_safe",
+    "use_selected_cap": false,
+    "use_best_so_far": true,
+    "serving_backend": false
+  },
+  "out_dir": "/data1/home/qiujiamin/GUI-Agent-workspace/results/accel_followup/E15",
+  "status": "success",
+  "created_at": "2026-08-29T21:40:31.272930+00:00",
+  "ended_at": "2026-08-29T21:48:03.066892+00:00",
+  "commands": [
+    {
+      "name": "py_compile",
+      "command": "/data1/home/wuzheng/.conda/envs/qg/bin/python -m py_compile test_framework/phone_prompt.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/profile_single_image.py"
+    },
+    {
+      "name": "eval",
+      "command": "/data1/home/wuzheng/.conda/envs/qg/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode dynamic_safe --point_tolerance 100.0 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel_followup/E15/eval.json"
+    },
+    {
+      "name": "profile",
+      "command": "/data1/home/wuzheng/.conda/envs/qg/bin/python scripts/profile_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode dynamic_safe --point_tolerance 100.0 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel_followup/E15/profile.json --limit 5 --warmup 1"
+    }
+  ],
+  "steps": [
+    {
+      "name": "py_compile",
+      "return_code": 0,
+      "ended_at": "2026-08-29T21:40:31.387841+00:00"
+    },
+    {
+      "name": "eval",
+      "return_code": 0,
+      "ended_at": "2026-08-29T21:47:06.102468+00:00"
+    },
+    {
+      "name": "profile",
+      "return_code": 0,
+      "ended_at": "2026-08-29T21:48:03.066064+00:00"
+    }
+  ],
+  "notes": [],
+  "launcher_args": {
+    "experiments": "E15-E16",
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "test_json": "data/androidcontrol_mini/test.json",
+    "output_root": "results/accel_followup",
+    "python": "/data1/home/wuzheng/.conda/envs/qg/bin/python",
+    "gpus": null,
+    "device": "auto",
+    "device_map": "auto",
+    "profile_limit": 5,
+    "warmup": 1,
+    "point_tolerance": 100.0,
+    "min_pixels": null,
+    "max_pixels": null,
+    "resume": true,
+    "fail_fast": false,
+    "dry_run": false,
+    "serving_command": null
+  },
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "1,6",
+    "ASCEND_RT_VISIBLE_DEVICES": null,
+    "NVIDIA_VISIBLE_DEVICES": null,
+    "PYTHONPATH": null,
+    "CONDA_DEFAULT_ENV": "qg",
+    "VIRTUAL_ENV": null
+  },
+  "git": {
+    "head": "a7c3b13628a1816c0fe69d68415cac0c2c7be138",
+    "status_short": "?? results/accel_followup/\n?? scripts/addi_exp.sh",
+    "diff_stat": ""
+  },
+  "package_versions": {
+    "python": "3.11.15",
+    "torch": "2.13.0",
+    "transformers": "5.16.1",
+    "qwen-vl-utils": "0.0.14",
+    "vllm": null,
+    "sglang": null
+  },
+  "wall_clock_seconds": 451.7300481470302,
+  "summary": {
+    "gui_only": {
+      "type_accuracy": 0.972972972972973,
+      "step_success_rate": 0.918918918918919,
+      "trajectory_success_rate": 0.8
+    },
+    "strict": {
+      "type_accuracy": 0.8235294117647058,
+      "step_success_rate": 0.7647058823529411,
+      "trajectory_success_rate": 0.4
+    },
+    "output_health": {
+      "pred_unknown": 0,
+      "contains_think_end": 0,
+      "hit_max_new_tokens": 0,
+      "json_enclosed": 50,
+      "num_outputs": 51,
+      "avg_input_tokens": 2548.6470588235293,
+      "avg_output_tokens": 19.49019607843137,
+      "min_output_tokens": 6,
+      "median_output_tokens": 18,
+      "max_output_tokens": 42,
+      "malformed_parse_repair_count": null
+    },
+    "profile_total_mean": 5.446546413935721,
+    "profile_generate_mean": 5.316202897205949
+  }
+}
