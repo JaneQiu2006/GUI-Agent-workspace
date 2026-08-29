@@ -1,0 +1,4 @@
+
+===== 2026-08-29T14:40:48.342033+00:00 py_compile: /data1/home/wuzheng/.conda/envs/qg/bin/python -m py_compile test_framework/phone_prompt.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/profile_single_image.py =====
+
+===== 2026-08-29T14:40:48.384709+00:00 eval: /data1/home/wuzheng/.conda/envs/qg/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode default --point_tolerance 100.0 --attn_implementation flash_attention_2 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel/E05/eval.json =====

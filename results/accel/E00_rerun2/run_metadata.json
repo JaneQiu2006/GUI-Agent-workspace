@@ -1,0 +1,81 @@
+{
+  "experiment": {
+    "experiment_id": "E00",
+    "direction": "calibrated baseline",
+    "max_new_tokens": 128,
+    "dtype": "auto",
+    "attn_implementation": null,
+    "batch_size": 1,
+    "visual_token_mode": "default",
+    "use_selected_cap": false,
+    "use_best_so_far": false,
+    "serving_backend": false
+  },
+  "out_dir": "/data1/home/qiujiamin/GUI-Agent-workspace/results/accel/E00_rerun2",
+  "status": "interrupted",
+  "created_at": "2026-08-29T14:16:44.626100+00:00",
+  "ended_at": "2026-08-29T14:17:36.824203+00:00",
+  "commands": [
+    {
+      "name": "py_compile",
+      "command": "/data1/home/wuzheng/.conda/envs/qg/bin/python -m py_compile test_framework/phone_prompt.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/profile_single_image.py"
+    },
+    {
+      "name": "eval",
+      "command": "/data1/home/wuzheng/.conda/envs/qg/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 128 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode default --point_tolerance 100.0 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel/E00_rerun2/eval.json"
+    },
+    {
+      "name": "profile",
+      "command": "/data1/home/wuzheng/.conda/envs/qg/bin/python scripts/profile_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 128 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode default --point_tolerance 100.0 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel/E00_rerun2/profile.json --limit 5 --warmup 1"
+    }
+  ],
+  "steps": [
+    {
+      "name": "py_compile",
+      "return_code": 0,
+      "ended_at": "2026-08-29T14:16:44.732116+00:00"
+    }
+  ],
+  "notes": [],
+  "launcher_args": {
+    "experiments": "all",
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "test_json": "data/androidcontrol_mini/test.json",
+    "output_root": "results/accel",
+    "python": "/data1/home/wuzheng/.conda/envs/qg/bin/python",
+    "gpus": null,
+    "device": "auto",
+    "device_map": "auto",
+    "profile_limit": 5,
+    "warmup": 1,
+    "point_tolerance": 100.0,
+    "min_pixels": null,
+    "max_pixels": null,
+    "resume": true,
+    "fail_fast": false,
+    "dry_run": false,
+    "serving_command": null
+  },
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "0,1",
+    "ASCEND_RT_VISIBLE_DEVICES": null,
+    "NVIDIA_VISIBLE_DEVICES": null,
+    "PYTHONPATH": null,
+    "CONDA_DEFAULT_ENV": "qg",
+    "VIRTUAL_ENV": null
+  },
+  "git": {
+    "head": "8d9eff269c243d8ef0c6e9e7274a6912276cd259",
+    "status_short": "?? results/accel/",
+    "diff_stat": ""
+  },
+  "package_versions": {
+    "python": "3.11.15",
+    "torch": "2.13.0",
+    "transformers": "5.16.1",
+    "qwen-vl-utils": "0.0.14",
+    "vllm": null,
+    "sglang": null
+  },
+  "wall_clock_seconds": 52.137850595638156
+}

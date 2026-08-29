@@ -1,0 +1,29 @@
+
+===== 2026-08-29T14:15:10.993769+00:00 py_compile: /data1/home/wuzheng/.conda/envs/qg/bin/python -m py_compile test_framework/phone_prompt.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/profile_single_image.py =====
+
+===== 2026-08-29T14:15:11.039471+00:00 eval: /data1/home/wuzheng/.conda/envs/qg/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 128 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode default --point_tolerance 100.0 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel/E00/eval.json =====
+EVAL_STEP 1/51 episode=0 step=0 type_ok=True step_ok=False
+EVAL_STEP 2/51 episode=0 step=1 type_ok=False step_ok=False
+EVAL_STEP 3/51 episode=0 step=2 type_ok=True step_ok=True
+EVAL_STEP 4/51 episode=20 step=0 type_ok=True step_ok=True
+EVAL_STEP 5/51 episode=20 step=1 type_ok=True step_ok=True
+EVAL_STEP 6/51 episode=20 step=2 type_ok=True step_ok=True
+EVAL_STEP 7/51 episode=20 step=3 type_ok=True step_ok=True
+EVAL_STEP 8/51 episode=40 step=0 type_ok=True step_ok=True
+EVAL_STEP 9/51 episode=60 step=0 type_ok=False step_ok=False
+EVAL_STEP 10/51 episode=60 step=1 type_ok=True step_ok=True
+EVAL_STEP 11/51 episode=60 step=2 type_ok=False step_ok=False
+EVAL_STEP 12/51 episode=60 step=3 type_ok=False step_ok=False
+EVAL_STEP 13/51 episode=60 step=4 type_ok=True step_ok=True
+EVAL_STEP 14/51 episode=60 step=5 type_ok=False step_ok=False
+EVAL_STEP 15/51 episode=80 step=0 type_ok=True step_ok=True
+EVAL_STEP 16/51 episode=80 step=1 type_ok=True step_ok=False
+EVAL_STEP 17/51 episode=80 step=2 type_ok=True step_ok=True
+EVAL_STEP 18/51 episode=100 step=0 type_ok=True step_ok=True
+EVAL_STEP 19/51 episode=100 step=1 type_ok=True step_ok=True
+EVAL_STEP 20/51 episode=140 step=0 type_ok=False step_ok=False
+EVAL_STEP 21/51 episode=140 step=1 type_ok=False step_ok=False
+EVAL_STEP 22/51 episode=140 step=2 type_ok=True step_ok=True
+EVAL_STEP 23/51 episode=140 step=3 type_ok=True step_ok=True
+EVAL_STEP 24/51 episode=140 step=4 type_ok=True step_ok=True
+EVAL_STEP 25/51 episode=140 step=5 type_ok=True step_ok=True

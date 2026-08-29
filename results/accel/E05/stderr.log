@@ -1,0 +1,19 @@
+
+===== 2026-08-29T14:40:48.342058+00:00 py_compile: /data1/home/wuzheng/.conda/envs/qg/bin/python -m py_compile test_framework/phone_prompt.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/profile_single_image.py =====
+
+===== 2026-08-29T14:40:48.384735+00:00 eval: /data1/home/wuzheng/.conda/envs/qg/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode default --point_tolerance 100.0 --attn_implementation flash_attention_2 --output /data1/home/qiujiamin/GUI-Agent-workspace/results/accel/E05/eval.json =====
+GPU_MEMORY_WARNING reset_peak_memory_stats(cuda:0) failed: Invalid device argument 
+GPU_MEMORY_WARNING reset_peak_memory_stats(cuda:1) failed: Invalid device argument : did you call init?
+Traceback (most recent call last):
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/scripts/eval_androidcontrol.py", line 383, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/scripts/eval_androidcontrol.py", line 327, in main
+    model, processor = load_model_and_processor(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/test_framework/hf_gui_baseline.py", line 138, in load_model_and_processor
+    raise RuntimeError(
+RuntimeError: 无法加载本地多模态模型。config.model_type='qwen3_5', architectures=('Qwen3_5ForConditionalGeneration',)。
+已尝试的 Transformers model class 均失败：
+- AutoModelForImageTextToText: ImportError: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package for FlashAttention2 doesn't seem to be installed.
+- AutoModelForCausalLM: ImportError: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package for FlashAttention2 doesn't seem to be installed.
