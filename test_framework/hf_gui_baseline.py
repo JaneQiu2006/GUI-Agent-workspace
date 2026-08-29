@@ -33,6 +33,12 @@ class GuiInferenceResult:
         return asdict(self)
 
 
+@dataclass
+class GuiProfiledInferenceResult(GuiInferenceResult):
+    timings: Dict[str, float]
+    memory: Dict[str, Any]
+
+
 def build_gui_messages(
     image_path: Path,
     instruction: str,
@@ -245,6 +251,95 @@ def infer_one(
     )
 
 
+def profile_infer_one(
+    model: Any,
+    processor: Any,
+    image_path: Path,
+    instruction: str,
+    max_new_tokens: int = 128,
+    device: str = "auto",
+    history: Optional[List[Dict[str, Any]]] = None,
+    low_level: Optional[Any] = None,
+) -> GuiProfiledInferenceResult:
+    import torch
+
+    timings: Dict[str, float] = {}
+    total_started = time.perf_counter()
+
+    stage_started = time.perf_counter()
+    messages, prompt = build_gui_messages(image_path, instruction, history, low_level)
+    timings["build_prompt_seconds"] = time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    chat_text = processor.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    timings["apply_chat_template_seconds"] = time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    image_inputs, video_inputs = _process_vision_info(messages)
+    timings["vision_preprocess_seconds"] = time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    inputs = processor(
+        text=[chat_text],
+        images=image_inputs,
+        videos=video_inputs,
+        padding=True,
+        return_tensors="pt",
+    )
+    timings["processor_encode_seconds"] = time.perf_counter() - stage_started
+    input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
+
+    target_device = _input_device(model, device)
+    stage_started = time.perf_counter()
+    if hasattr(inputs, "to") and target_device is not None:
+        inputs = inputs.to(target_device)
+    _sync_if_cuda(torch, target_device)
+    timings["input_to_device_seconds"] = time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    with torch.inference_mode():
+        generated_ids = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+        )
+    _sync_if_cuda(torch, target_device)
+    timings["generate_seconds"] = time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    generated_ids_trimmed = [
+        out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+    ]
+    output_text = processor.batch_decode(
+        generated_ids_trimmed,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )
+    raw_response = output_text[0].strip() if output_text else ""
+    output_tokens = int(generated_ids_trimmed[0].shape[-1]) if generated_ids_trimmed else 0
+    timings["decode_seconds"] = time.perf_counter() - stage_started
+
+    stage_started = time.perf_counter()
+    parsed_action = postprocess_response(raw_response)
+    timings["postprocess_seconds"] = time.perf_counter() - stage_started
+    timings["total_seconds"] = time.perf_counter() - total_started
+
+    return GuiProfiledInferenceResult(
+        raw_response=raw_response,
+        parsed_action=parsed_action,
+        latency_seconds=timings["generate_seconds"],
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        prompt=prompt,
+        timings=timings,
+        memory=gpu_memory_snapshot(),
+    )
+
+
 def mock_infer_one(
     image_path: Path,
     instruction: str,
@@ -296,6 +391,60 @@ def _resolve_dtype(torch: Any, dtype: str) -> Any:
     if dtype in {"float32", "fp32"}:
         return torch.float32
     raise ValueError(f"Unsupported dtype: {dtype}")
+
+
+def reset_gpu_memory_stats() -> List[str]:
+    try:
+        import torch
+    except ImportError:
+        return []
+    if not torch.cuda.is_available():
+        return []
+    warnings = []
+    for index in range(torch.cuda.device_count()):
+        try:
+            torch.cuda.reset_peak_memory_stats(index)
+        except RuntimeError as exc:
+            warnings.append(f"cuda:{index}: {exc}")
+    return warnings
+
+
+def gpu_memory_snapshot() -> Dict[str, Any]:
+    try:
+        import torch
+    except ImportError:
+        return {}
+    if not torch.cuda.is_available():
+        return {}
+    allocated = {}
+    reserved = {}
+    peak_allocated = {}
+    peak_reserved = {}
+    warnings = []
+    for index in range(torch.cuda.device_count()):
+        key = str(index)
+        try:
+            allocated[key] = int(torch.cuda.memory_allocated(index))
+            reserved[key] = int(torch.cuda.memory_reserved(index))
+            peak_allocated[key] = int(torch.cuda.max_memory_allocated(index))
+            peak_reserved[key] = int(torch.cuda.max_memory_reserved(index))
+        except RuntimeError as exc:
+            warnings.append(f"cuda:{index}: {exc}")
+    snapshot: Dict[str, Any] = {
+        "allocated_bytes": allocated,
+        "reserved_bytes": reserved,
+        "peak_allocated_bytes": peak_allocated,
+        "peak_reserved_bytes": peak_reserved,
+        "peak_allocated_gb": {
+            key: round(value / 1024**3, 4) for key, value in peak_allocated.items()
+        },
+        "peak_reserved_gb": {
+            key: round(value / 1024**3, 4) for key, value in peak_reserved.items()
+        },
+    }
+    if warnings:
+        snapshot["warnings"] = warnings
+    return snapshot
 
 
 def _looks_like_qwen25_vl(model_type: str, architectures: Tuple[str, ...]) -> bool:

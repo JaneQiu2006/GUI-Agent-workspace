@@ -97,6 +97,42 @@ pip install -r requirements-androidcontrol.txt
 For already processed AndroidControl JSON/JSONL files, keep using
 `scripts/prepare_androidcontrol_jsonl.py` and `test_gui_benchmark.py`.
 
+## Profiling
+
+Use the profiling scripts before changing acceleration code.  They reuse the
+same model loading, prompt construction, image preprocessing, generation, and
+action parsing path as the baseline.
+
+Single screenshot profiling:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python scripts/profile_single_image.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --image data/androidcontrol_mini/images/episode_0/step_0.png \
+  --instruction "目标任务：打开设置\n当前步骤：点击设置图标" \
+  --output results/profile_single_image.json \
+  --warmup 1 \
+  --repeats 3 \
+  --max_new_tokens 128
+```
+
+AndroidControl mini profiling:
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/profile_androidcontrol_mini.json \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 128
+```
+
+The profile JSON reports stage timings for `build_prompt`,
+`apply_chat_template`, `vision_preprocess`, `processor_encode`,
+`input_to_device`, `generate`, `decode`, and `postprocess`, plus token counts
+and best-effort CUDA peak memory snapshots.
+
 ## Dependency Notes
 
 Install only missing packages in the server environment:
