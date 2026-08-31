@@ -27,6 +27,13 @@ from hf_gui_baseline import (
     load_model_and_processor,
     resolve_visual_token_mode,
 )
+from cache_inference import (
+    PAGE_CACHE_MODES,
+    PAGE_CACHE_SCOPES,
+    PAGE_CACHE_SIMILARITIES,
+    PageCacheConfig,
+    PageLevelCache,
+)
 
 
 TRANSITION_OR_NOOP_TYPES = {"OPEN_APP", "WAIT"}
@@ -190,6 +197,38 @@ def summarize_output_health(details: List[Dict[str, Any]], max_new_tokens: int) 
     }
 
 
+def summarize_cache_metrics(details: List[Dict[str, Any]]) -> Dict[str, Any]:
+    records = [item.get("cache") for item in details if isinstance(item.get("cache"), dict)]
+    if not records:
+        return {"mode": "off", "num_records": 0}
+    count = len(records)
+    hit_types = [str(record.get("page_cache_hit_type") or "miss") for record in records]
+    tile_ratios = [
+        float(record["tile_unchanged_ratio"])
+        for record in records
+        if record.get("tile_unchanged_ratio") is not None
+    ]
+    dhash_values = [
+        int(record["similarity_dhash_hamming"])
+        for record in records
+        if record.get("similarity_dhash_hamming") is not None
+    ]
+    return {
+        "mode": str(records[-1].get("mode") or "off"),
+        "num_records": count,
+        "page_cache_hit_rate": sum(1 for record in records if record.get("page_cache_hit")) / count,
+        "processor_cache_hit_rate": sum(1 for record in records if record.get("processor_cache_hit")) / count,
+        "page_cache_hit_types": {
+            hit_type: sum(1 for value in hit_types if value == hit_type)
+            for hit_type in sorted(set(hit_types))
+        },
+        "avg_tile_unchanged_ratio": statistics.fmean(tile_ratios) if tile_ratios else None,
+        "avg_similarity_dhash_hamming": statistics.fmean(dhash_values) if dhash_values else None,
+        "cache_evictions": int(records[-1].get("cache_evictions") or 0),
+        "cache_entries": int(records[-1].get("cache_entries") or 0),
+    }
+
+
 def resolved_image_path(sample: Dict[str, Any], data_dir: Path) -> Path:
     image_path = Path(str(sample["image_path"]))
     if not image_path.is_absolute():
@@ -211,7 +250,7 @@ def detail_from_result(
     type_ok = pred_type == gt_type
     step_ok = actions_match(pred_action, gt_action, point_tolerance=point_tolerance)
     metric_group = metric_group_for_type(gt_type)
-    return {
+    detail = {
         "episode_id": sample.get("episode_id"),
         "step_id": sample.get("step_id"),
         "task": sample.get("task"),
@@ -231,6 +270,10 @@ def detail_from_result(
         "output_tokens": result.output_tokens,
         "resolved_visual_token_mode": visual_token_mode,
     }
+    cache_record = getattr(result, "cache", None)
+    if isinstance(cache_record, dict):
+        detail["cache"] = cache_record
+    return detail
 
 
 def evaluate_records(
@@ -245,6 +288,7 @@ def evaluate_records(
     visual_token_mode: str = "default",
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
+    page_cache: Optional[PageLevelCache] = None,
 ) -> Dict[str, Any]:
     details = []
 
@@ -265,6 +309,8 @@ def evaluate_records(
                     min_pixels=min_pixels,
                     max_pixels=max_pixels,
                     action_hint=str(chunk[0].get("action", "")),
+                    page_cache=page_cache,
+                    cache_trajectory_id=chunk[0].get("episode_id"),
                 )
             ]
         else:
@@ -309,6 +355,7 @@ def evaluate_records(
         "metric_view_policy": metric_view_policy(),
         "views": views,
         "output_health": summarize_output_health(details, max_new_tokens),
+        "cache": summarize_cache_metrics(details),
         **peak_gpu_memory(),
     }
     return {"metrics": metrics, "details": details}
@@ -331,6 +378,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min_pixels", type=int)
     parser.add_argument("--max_pixels", type=int)
     parser.add_argument("--point_tolerance", type=float, default=100.0)
+    parser.add_argument("--page_cache_mode", default="off", choices=PAGE_CACHE_MODES)
+    parser.add_argument("--page_cache_scope", default="trajectory", choices=PAGE_CACHE_SCOPES)
+    parser.add_argument("--page_cache_similarity", default="tile", choices=PAGE_CACHE_SIMILARITIES)
+    parser.add_argument("--page_cache_max_entries", type=int, default=128)
+    parser.add_argument("--page_cache_near_dhash_threshold", type=int, default=4)
+    parser.add_argument("--page_cache_near_tile_threshold", type=float, default=0.98)
+    parser.add_argument("--page_cache_patch_tile_threshold", type=float, default=0.90)
+    parser.add_argument("--page_cache_tile_rows", type=int, default=8)
+    parser.add_argument("--page_cache_tile_cols", type=int, default=16)
+    parser.add_argument("--page_cache_ignored_top_ratio", type=float, default=0.0)
+    parser.add_argument("--page_cache_ignored_bottom_ratio", type=float, default=0.0)
     return parser
 
 
@@ -341,8 +399,11 @@ def main() -> int:
         records = records[: args.limit]
     if not records:
         raise SystemExit("No AndroidControl samples found")
+    if args.page_cache_mode != "off" and args.batch_size != 1:
+        raise SystemExit("Page-level cache baseline currently supports batch_size=1 only")
 
     data_dir = args.data_dir or args.test_json.parent
+    page_cache = make_page_cache(args)
     reset_peak_gpu_memory()
     model, processor = load_model_and_processor(
         args.model_path,
@@ -364,6 +425,7 @@ def main() -> int:
         visual_token_mode=args.visual_token_mode,
         min_pixels=args.min_pixels,
         max_pixels=args.max_pixels,
+        page_cache=page_cache,
     )
     wall_clock_seconds = time.perf_counter() - eval_started
     output_token_total = sum(
@@ -390,6 +452,7 @@ def main() -> int:
         "min_pixels": args.min_pixels,
         "max_pixels": args.max_pixels,
         "point_tolerance": args.point_tolerance,
+        "page_cache": page_cache.config.to_dict() if page_cache else {"mode": "off"},
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -397,6 +460,38 @@ def main() -> int:
     print("EVAL_DONE " + json.dumps(result["metrics"], ensure_ascii=False), flush=True)
     print(f"EVAL_OUTPUT {args.output}", flush=True)
     return 0
+
+def make_page_cache(args: argparse.Namespace) -> Optional[PageLevelCache]:
+    if args.page_cache_mode == "off":
+        return None
+    identity = "|".join(
+        [
+            str(args.model_path),
+            str(args.device),
+            str(args.device_map),
+            str(args.dtype),
+            str(args.attn_implementation),
+            str(args.visual_token_mode),
+            str(args.min_pixels),
+            str(args.max_pixels),
+        ]
+    )
+    return PageLevelCache(
+        PageCacheConfig(
+            mode=args.page_cache_mode,
+            scope=args.page_cache_scope,
+            similarity=args.page_cache_similarity,
+            max_entries=args.page_cache_max_entries,
+            near_dhash_threshold=args.page_cache_near_dhash_threshold,
+            near_tile_threshold=args.page_cache_near_tile_threshold,
+            patch_tile_threshold=args.page_cache_patch_tile_threshold,
+            tile_rows=args.page_cache_tile_rows,
+            tile_cols=args.page_cache_tile_cols,
+            ignored_top_ratio=args.page_cache_ignored_top_ratio,
+            ignored_bottom_ratio=args.page_cache_ignored_bottom_ratio,
+            identity=identity,
+        )
+    )
 
 
 if __name__ == "__main__":

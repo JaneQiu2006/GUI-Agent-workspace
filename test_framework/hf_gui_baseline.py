@@ -8,12 +8,13 @@ profiling or acceleration code can be inserted later.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from benchmark_runner import parse_action
+from cache_inference import PageLevelCache
 from phone_prompt import build_phone_prompt
 
 
@@ -37,6 +38,7 @@ class GuiInferenceResult:
     input_tokens: Optional[int]
     output_tokens: Optional[int]
     prompt: str
+    cache: Optional[Dict[str, Any]] = field(default=None, kw_only=True)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -196,6 +198,79 @@ def preprocess_inputs(
     return inputs, prompt, input_tokens
 
 
+def preprocess_inputs_with_page_cache(
+    processor: Any,
+    image_path: Path,
+    instruction: str,
+    page_cache: Optional[PageLevelCache],
+    cache_trajectory_id: Optional[Any] = None,
+    history: Optional[List[Dict[str, Any]]] = None,
+    low_level: Optional[Any] = None,
+    visual_token_mode: str = "default",
+    min_pixels: Optional[int] = None,
+    max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
+) -> Tuple[Any, str, int, Optional[Dict[str, Any]]]:
+    """Apply preprocessing with optional exact page-level processor input cache."""
+    if page_cache is None or not page_cache.enabled:
+        inputs, prompt, input_tokens = preprocess_inputs(
+            processor,
+            image_path,
+            instruction,
+            history=history,
+            low_level=low_level,
+            visual_token_mode=visual_token_mode,
+            min_pixels=min_pixels,
+            max_pixels=max_pixels,
+            action_hint=action_hint,
+        )
+        return inputs, prompt, input_tokens, None
+
+    messages, prompt = build_gui_messages(
+        image_path,
+        instruction,
+        history,
+        low_level,
+        visual_token_mode=visual_token_mode,
+        min_pixels=min_pixels,
+        max_pixels=max_pixels,
+        action_hint=action_hint,
+    )
+    chat_text = apply_chat_template_without_thinking(processor, messages)
+    fingerprint, probe = page_cache.begin_step(image_path, cache_trajectory_id)
+    resolved_mode = resolve_visual_token_mode(
+        visual_token_mode,
+        instruction=instruction,
+        action_hint=action_hint,
+    )
+    cache_key = page_cache.processor_key(
+        chat_text,
+        fingerprint,
+        visual_token_mode=resolved_mode,
+        min_pixels=min_pixels,
+        max_pixels=max_pixels,
+    )
+    inputs = page_cache.get_processor_inputs(cache_key)
+    if inputs is not None:
+        probe.processor_cache_hit = True
+        input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
+        page_cache.finish_step(fingerprint, cache_trajectory_id, probe)
+        return inputs, prompt, input_tokens, probe.to_dict()
+
+    image_inputs, video_inputs = _process_vision_info(messages)
+    inputs = processor(
+        text=[chat_text],
+        images=image_inputs,
+        videos=video_inputs,
+        padding=True,
+        return_tensors="pt",
+    )
+    input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
+    page_cache.put_processor_inputs(cache_key, inputs)
+    page_cache.finish_step(fingerprint, cache_trajectory_id, probe)
+    return inputs, prompt, input_tokens, probe.to_dict()
+
+
 def generate_response(
     model: Any,
     processor: Any,
@@ -268,11 +343,15 @@ def infer_one(
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
     action_hint: Optional[str] = None,
+    page_cache: Optional[PageLevelCache] = None,
+    cache_trajectory_id: Optional[Any] = None,
 ) -> GuiInferenceResult:
-    inputs, prompt, input_tokens = preprocess_inputs(
+    inputs, prompt, input_tokens, cache_record = preprocess_inputs_with_page_cache(
         processor,
         image_path,
         instruction,
+        page_cache=page_cache,
+        cache_trajectory_id=cache_trajectory_id,
         history=history,
         low_level=low_level,
         visual_token_mode=visual_token_mode,
@@ -294,6 +373,7 @@ def infer_one(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         prompt=prompt,
+        cache=cache_record,
     )
 
 
@@ -440,6 +520,8 @@ def profile_infer_one(
     min_pixels: Optional[int] = None,
     max_pixels: Optional[int] = None,
     action_hint: Optional[str] = None,
+    page_cache: Optional[PageLevelCache] = None,
+    cache_trajectory_id: Optional[Any] = None,
 ) -> GuiProfiledInferenceResult:
     import torch
 
@@ -463,19 +545,59 @@ def profile_infer_one(
     chat_text = apply_chat_template_without_thinking(processor, messages)
     timings["apply_chat_template_seconds"] = time.perf_counter() - stage_started
 
-    stage_started = time.perf_counter()
-    image_inputs, video_inputs = _process_vision_info(messages)
-    timings["vision_preprocess_seconds"] = time.perf_counter() - stage_started
+    cache_record: Optional[Dict[str, Any]] = None
+    if page_cache is not None and page_cache.enabled:
+        fingerprint, probe = page_cache.begin_step(image_path, cache_trajectory_id)
+        resolved_mode = resolve_visual_token_mode(
+            visual_token_mode,
+            instruction=instruction,
+            action_hint=action_hint,
+        )
+        cache_key = page_cache.processor_key(
+            chat_text,
+            fingerprint,
+            visual_token_mode=resolved_mode,
+            min_pixels=min_pixels,
+            max_pixels=max_pixels,
+        )
+        inputs = page_cache.get_processor_inputs(cache_key)
+        if inputs is not None:
+            probe.processor_cache_hit = True
+            timings["vision_preprocess_seconds"] = 0.0
+            timings["processor_encode_seconds"] = 0.0
+        else:
+            stage_started = time.perf_counter()
+            image_inputs, video_inputs = _process_vision_info(messages)
+            timings["vision_preprocess_seconds"] = time.perf_counter() - stage_started
 
-    stage_started = time.perf_counter()
-    inputs = processor(
-        text=[chat_text],
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-    )
-    timings["processor_encode_seconds"] = time.perf_counter() - stage_started
+            stage_started = time.perf_counter()
+            inputs = processor(
+                text=[chat_text],
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt",
+            )
+            timings["processor_encode_seconds"] = time.perf_counter() - stage_started
+            page_cache.put_processor_inputs(cache_key, inputs)
+        page_cache.finish_step(fingerprint, cache_trajectory_id, probe)
+        cache_record = probe.to_dict()
+        timings["cache_lookup_seconds"] = float(cache_record.get("cache_lookup_seconds", 0.0))
+        timings["cache_write_seconds"] = float(cache_record.get("cache_write_seconds", 0.0))
+    else:
+        stage_started = time.perf_counter()
+        image_inputs, video_inputs = _process_vision_info(messages)
+        timings["vision_preprocess_seconds"] = time.perf_counter() - stage_started
+
+        stage_started = time.perf_counter()
+        inputs = processor(
+            text=[chat_text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        timings["processor_encode_seconds"] = time.perf_counter() - stage_started
     input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
 
     target_device = _input_device(model, device)
@@ -521,6 +643,7 @@ def profile_infer_one(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         prompt=prompt,
+        cache=cache_record,
         timings=timings,
         memory=gpu_memory_snapshot(),
     )

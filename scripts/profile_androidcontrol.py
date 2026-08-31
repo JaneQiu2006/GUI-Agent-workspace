@@ -23,6 +23,7 @@ from eval_androidcontrol import (
     load_samples,
     metric_view_policy,
     resolved_image_path,
+    summarize_cache_metrics,
     summarize_output_health,
 )
 from hf_gui_baseline import (
@@ -34,6 +35,13 @@ from hf_gui_baseline import (
     profile_infer_one,
     reset_gpu_memory_stats,
     resolve_visual_token_mode,
+)
+from cache_inference import (
+    PAGE_CACHE_MODES,
+    PAGE_CACHE_SCOPES,
+    PAGE_CACHE_SIMILARITIES,
+    PageCacheConfig,
+    PageLevelCache,
 )
 
 
@@ -59,6 +67,7 @@ def summarize_details(details: List[Dict[str, Any]]) -> Dict[str, Any]:
         "avg_input_tokens": statistics.fmean(input_values) if input_values else 0.0,
         "avg_output_tokens": statistics.fmean(output_values) if output_values else 0.0,
         "timings_seconds": timing_summary,
+        "cache": summarize_cache_metrics(details),
     }
 
 
@@ -80,6 +89,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min_pixels", type=int)
     parser.add_argument("--max_pixels", type=int)
     parser.add_argument("--point_tolerance", type=float, default=100.0)
+    parser.add_argument("--page_cache_mode", default="off", choices=PAGE_CACHE_MODES)
+    parser.add_argument("--page_cache_scope", default="trajectory", choices=PAGE_CACHE_SCOPES)
+    parser.add_argument("--page_cache_similarity", default="tile", choices=PAGE_CACHE_SIMILARITIES)
+    parser.add_argument("--page_cache_max_entries", type=int, default=128)
+    parser.add_argument("--page_cache_near_dhash_threshold", type=int, default=4)
+    parser.add_argument("--page_cache_near_tile_threshold", type=float, default=0.98)
+    parser.add_argument("--page_cache_patch_tile_threshold", type=float, default=0.90)
+    parser.add_argument("--page_cache_tile_rows", type=int, default=8)
+    parser.add_argument("--page_cache_tile_cols", type=int, default=16)
+    parser.add_argument("--page_cache_ignored_top_ratio", type=float, default=0.0)
+    parser.add_argument("--page_cache_ignored_bottom_ratio", type=float, default=0.0)
     return parser
 
 
@@ -90,7 +110,10 @@ def main() -> int:
         records = records[: args.limit]
     if not records:
         raise SystemExit("No AndroidControl samples found")
+    if args.page_cache_mode != "off" and args.batch_size != 1:
+        raise SystemExit("Page-level cache baseline currently supports batch_size=1 only")
     data_dir = args.data_dir or args.test_json.parent
+    page_cache = make_page_cache(args)
 
     load_started = time.perf_counter()
     model, processor = load_model_and_processor(
@@ -119,6 +142,8 @@ def main() -> int:
                 min_pixels=args.min_pixels,
                 max_pixels=args.max_pixels,
                 action_hint=str(chunk[0].get("action", "")),
+                page_cache=page_cache,
+                cache_trajectory_id=chunk[0].get("episode_id"),
             )
         else:
             profile_infer_batch(
@@ -135,6 +160,8 @@ def main() -> int:
                 max_pixels=args.max_pixels,
             )
 
+    if page_cache is not None:
+        page_cache.clear()
     warnings = reset_gpu_memory_stats()
     for warning in warnings:
         print(f"GPU_MEMORY_WARNING {warning}", file=sys.stderr, flush=True)
@@ -154,12 +181,14 @@ def main() -> int:
                     str(chunk[0]["task"]),
                     max_new_tokens=args.max_new_tokens,
                     device=args.device,
-                        visual_token_mode=args.visual_token_mode,
-                        min_pixels=args.min_pixels,
-                        max_pixels=args.max_pixels,
-                        action_hint=str(chunk[0].get("action", "")),
-                    )
-                ]
+                    visual_token_mode=args.visual_token_mode,
+                    min_pixels=args.min_pixels,
+                    max_pixels=args.max_pixels,
+                    action_hint=str(chunk[0].get("action", "")),
+                    page_cache=page_cache,
+                    cache_trajectory_id=chunk[0].get("episode_id"),
+                )
+            ]
         else:
             results = profile_infer_batch(
                 model,
@@ -227,6 +256,7 @@ def main() -> int:
             "min_pixels": args.min_pixels,
             "max_pixels": args.max_pixels,
             "point_tolerance": args.point_tolerance,
+            "page_cache": page_cache.config.to_dict() if page_cache else {"mode": "off"},
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
         "load_seconds": load_seconds,
@@ -239,6 +269,39 @@ def main() -> int:
     print("PROFILE_DONE " + json.dumps(output["summary"], ensure_ascii=False), flush=True)
     print(f"PROFILE_OUTPUT {args.output}", flush=True)
     return 0
+
+
+def make_page_cache(args: argparse.Namespace) -> PageLevelCache | None:
+    if args.page_cache_mode == "off":
+        return None
+    identity = "|".join(
+        [
+            str(args.model_path),
+            str(args.device),
+            str(args.device_map),
+            str(args.dtype),
+            str(args.attn_implementation),
+            str(args.visual_token_mode),
+            str(args.min_pixels),
+            str(args.max_pixels),
+        ]
+    )
+    return PageLevelCache(
+        PageCacheConfig(
+            mode=args.page_cache_mode,
+            scope=args.page_cache_scope,
+            similarity=args.page_cache_similarity,
+            max_entries=args.page_cache_max_entries,
+            near_dhash_threshold=args.page_cache_near_dhash_threshold,
+            near_tile_threshold=args.page_cache_near_tile_threshold,
+            patch_tile_threshold=args.page_cache_patch_tile_threshold,
+            tile_rows=args.page_cache_tile_rows,
+            tile_cols=args.page_cache_tile_cols,
+            ignored_top_ratio=args.page_cache_ignored_top_ratio,
+            ignored_bottom_ratio=args.page_cache_ignored_bottom_ratio,
+            identity=identity,
+        )
+    )
 
 
 if __name__ == "__main__":
