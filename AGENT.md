@@ -1,154 +1,286 @@
-# Project instructions
+# 项目协作说明
 
-## Project
-This repository is developed locally but compiled and tested on a remote
-Linux server with Ascend/CANN hardware.
+## 项目环境
 
-## Editing rules
-- Keep changes minimal and scoped to the requested task.
-- Do not refactor unrelated code.
-- Follow the existing code style and naming conventions.
-- Do not modify generated files or build artifacts.
-- Do not commit binaries, logs, core dumps, or build directories.
+本仓库主要在本地编辑，在远端 Jupiter 服务器上运行模型、GPU 评测和 profiling。当前本地 Windows 环境没有 Qwen3.8 模型、AndroidControl 原始数据、CUDA GPU 或远端 Python 环境，因此本地验证以静态检查为主。
 
-## Remote-only environment
-The local machine does not have the Ascend/CANN runtime or NPU hardware.
+远端实验主要使用：
 
-Therefore:
-- Do not assume CANN/NPU tests can run locally.
-- Perform static checks locally when possible.
-- Do not change code merely because remote-only dependencies are unavailable.
-- After editing, tell me exactly which commands should be run on the remote server.
+- 模型：`/data2/home/models/Qwen3.8-27B`
+- Python：`/data1/home/wuzheng/.conda/envs/qg/bin/python`
+- 测试集：`data/androidcontrol_mini/test.json`
+- GPU 选择：优先通过 `CUDA_VISIBLE_DEVICES=...` 或 launcher 的 `--gpus ...` 指定
 
-## Git
-- Show the changed files before finishing.
-- Summarize the purpose of each change.
-- Do not push automatically unless explicitly requested.
+不要因为本地缺少模型、数据或 GPU 依赖就改代码规避错误。涉及真实评测时，应给出需要在 Jupiter 上执行的命令。
 
-## Testing
-Remote validation is performed on Jupiter.
-Typical workflow:
+## 编辑规则
 
-git pull
-<build command>
-<test command>
+- 修改保持最小化，只处理用户当前请求相关内容。
+- 不做无关重构。
+- 遵循现有代码风格和命名习惯。
+- 不修改生成文件、构建产物、日志、core dump 或大结果目录，除非用户明确要求。
+- 不自动 push，除非用户明确要求。
+- 完成前展示被修改的文件，并说明每项修改目的。
 
-## Current GUI Agent Baseline Context
+## 当前核心代码
 
-As of 2026-08-29 21:50 CST, the repository has a calibrated static GUI Agent
-baseline for AndroidControl. Local Windows has no model, no raw AndroidControl
-shard, and no GPU, so local validation is limited to syntax/import/help checks.
-Remote validation happens on Jupiter.
+- `test_framework/phone_prompt.py`：共享手机 GUI prompt/action contract。当前已强化为 thinking off 风格，只要求输出一个合法 JSON action。
+- `test_framework/hf_gui_baseline.py`：HuggingFace / Transformers 静态 GUI 推理工具，包含模型加载、processor 输入构造、单样本推理、batch 推理、profiling、视觉 token 控制和显存统计。
+- `scripts/prepare_androidcontrol.py`：从 AndroidControl GZIP TFRecord 生成 `data/androidcontrol_mini/images/` 和 `data/androidcontrol_mini/test.json`。
+- `scripts/androidcontrol_actions.py`：将 AndroidControl GT action 转成统一 legacy action string，规范化模型输出，并计算 action type / step matching。
+- `scripts/eval_androidcontrol.py`：完整静态评测入口，输出 `eval.json`。
+- `scripts/profile_androidcontrol.py`：AndroidControl mini profiling 入口，输出 `profile.json`。
+- `scripts/profile_single_image.py`：单图 profiling 入口。
+- `scripts/run_accel_experiments.py`：一次性运行推理加速实验矩阵，支持 `--experiments`、`--resume`、`--gpus`、`--fail_fast` 和 `--dry_run`。
 
-Core code:
-- `test_framework/hf_gui_baseline.py`: HuggingFace Qwen3.8 static inference
-  utilities. Important functions are `load_model_and_processor`,
-  `preprocess_inputs`, `generate_response`, `infer_one`, `profile_infer_one`,
-  `reset_gpu_memory_stats`, and `gpu_memory_snapshot`.
-- `scripts/prepare_androidcontrol.py`: reads the raw AndroidControl GZIP
-  TFRecord shard and writes `data/androidcontrol_mini/images/` plus
-  `data/androidcontrol_mini/test.json`.
-- `scripts/androidcontrol_actions.py`: converts AndroidControl GT actions to
-  unified legacy action strings, normalizes model output, and computes action
-  type/step matching.
-- `scripts/eval_androidcontrol.py`: evaluates Qwen3.8 on the mini static
-  AndroidControl set and writes JSON metrics/details.
-- `scripts/profile_single_image.py` and `scripts/profile_androidcontrol.py`:
-  profiling entry points that reuse the same baseline inference path.
-- `test_framework/phone_prompt.py`: shared GUI prompt/action contract from the
-  original test framework.
+## 数据集与 prompt 口径
 
-Remote commands used for the calibrated baseline:
+AndroidControl mini 数据集的 `task` 字段来自原始数据：
+
+```text
+目标任务：{goal}
+当前步骤：{step_instruction}
+```
+
+加速实验没有改写 `data/androidcontrol_mini/test.json` 的任务字段。模型实际输入会在 `build_phone_prompt()` 中拼接共享 `PHONE_SYSTEM_PROMPT` 和 `当前任务：{task}`。因此：
+
+- 数据集 task/prompt 字段没有因加速实验改变。
+- 共享模型输入 prompt 模板在 2026-08-29 校准阶段强化过。
+- 当前校准后 baseline 和 E00-E20 加速实验在同一套 prompt/action contract 下可比。
+
+当前 prompt 相关事实：
+
+- `apply_chat_template(..., enable_thinking=False)` 已启用；若 processor 不支持，会自动 fallback。
+- 实测校准后 `contains_think_end = 0 / 51`，可认为当前实验已是 thinking off。
+- prompt 要求只输出一个合法 JSON 对象，不输出思考过程、解释、Markdown 或 `action:` 前缀。
+- 当前 action contract 支持 `tap`、`swipe`、`type`、`back`、`home`、`wait`、`complete`、`impossible`。
+- `LONG_PRESS` 仍是待定口径：当前样本只有 1 个，且 action contract 尚未正式支持。
+
+## 当前校准基线
+
+校准后 AndroidControl mini 结果生成于 2026-08-29 21:45 CST：
+
+- 10 条 trajectory，51 个 step。
+- strict type accuracy：80.39%。
+- strict step success rate：74.51%，即 38 / 51。
+- strict trajectory success rate：40.00%。
+- 主观察口径：`gui_only`。
+- `gui_only` type accuracy：97.30%。
+- `gui_only` step success rate：91.89%，即 34 / 37。
+- `gui_only` trajectory success rate：80.00%。
+- `transition_or_noop` (`OPEN_APP` + `WAIT`) step success rate：28.57%。
+- 平均延迟：4.62s / step。
+- 平均输出 token：19.94。
+- 峰值显存：GPU0 25.14 GB，GPU1 28.39 GB。
+
+`gui_only` 用于观察普通 GUI 操作能力，排除 `OPEN_APP` 和 `WAIT`。`strict` 保留用于和 AndroidControl 原始 GT 全量比较。
+
+已解决的校准问题：
+
+- thinking / 长输出问题已解决：0 / 51 输出包含 `</think>`，0 / 51 命中 `max_new_tokens=128`。
+- malformed JSON 不再导致 UNKNOWN：`pred_type == UNKNOWN` 为 0 / 51。
+- SCROLL 方向已按 AndroidControl 内容/页面方向校准，而不是手指物理运动方向；SCROLL step success 为 7 / 7。
+- `OPEN_APP` 和 `WAIT` 已通过 `strict`、`gui_only`、`transition_or_noop`、`open_app`、`wait`、`by_gt_type` 分视图报告。
+
+已知剩余问题：
+
+- `WAIT` 在静态单帧评测中噪声大，应继续单独报告。
+- `OPEN_APP` 是环境级动作，应继续与普通 GUI 操作分开报告。
+- `LONG_PRESS` 样本少且当前失败，需要决定加入 action contract 还是移出主口径。
+- 少量 CLICK 失败仍是坐标定位偏差。
+- GPU 显存统计是 best effort；CUDA reset/read 失败应作为 warning，不应中断评测。
+
+## 当前推理加速结论
+
+当前加速分析以 `docs/2026-08-30_inference_acceleration_results_analysis.md` 为准。速度对比的复现 baseline 是 `results/accel/E00_rerun3`。
+
+当前最好的简单单请求方案是 E11：
+
+```text
+max_new_tokens=48
+visual_token_mode=aggressive_reduce
+batch_size=1
+dtype=auto
+attn_implementation=None
+```
+
+E11 结果：
+
+- `gui_only` step success rate：91.89%，与 baseline 相同。
+- `strict` step success rate：76.47%。
+- `pred_unknown`：0 / 51。
+- `hit_max_new_tokens`：0 / 51。
+- 平均输入 token：1231，对比 default 约 3404。
+- 完整评测平均延迟：2.646s，对比 E00_rerun3 的 3.877s。
+- 完整评测吞吐：0.365 samples/sec，对比 E00_rerun3 的 0.248 samples/sec。
+- profile 平均总耗时：2.067s，对比 E00_rerun3 的 3.372s。
+- 峰值显存：GPU0 24.31 GB / GPU1 27.68 GB。
+
+视觉 token 模式：
+
+```python
+VISION_TOKEN_MODES = {
+    "default": {},
+    "mild_reduce": {"max_pixels": 768 * 28 * 28},
+    "aggressive_reduce": {"max_pixels": 512 * 28 * 28},
+    "dynamic_safe": {},
+    "dynamic_aggressive": {},
+}
+```
+
+当前有效图片输入压缩参数是：
+
+```text
+visual_token_mode=aggressive_reduce
+max_pixels=512 * 28 * 28 = 401408
+```
+
+这不是离线改写图片文件，而是在 image message 中传入 `max_pixels`，由 Qwen-VL processor / `process_vision_info()` 控制进入模型的视觉 token 预算。实测总输入 token 从约 3404 降到约 1231，约 2.76 倍压缩；像素预算上限约为 401k 像素。
+
+不建议采用的结果：
+
+- E03：`max_new_tokens=32` 不安全，会截断输出并产生 UNKNOWN。
+- E10：`mild_reduce` 虽快，但 CLICK step success 从 91.67% 降到 83.33%。
+- 旧 E12/E13：发生在 batch decode 修复前，输出健康度崩溃，不作为可用 batch 结论。
+- E16：`dynamic_aggressive` 会导致 CLICK 退化。
+- FP16 相关 E07/E09 当前环境更慢。
+- E05 需要安装兼容的 FlashAttention 2 后才能重跑。
+
+补跑结论：
+
+- `E11_rerun1` 复现 E11 准确率和速度。
+- `E11_bf16_sdpa` 略快于 `E11_rerun1`，但差距低于 1%，接近噪声。
+- `dynamic_safe` 保准确率，但单样本慢于固定 `aggressive_reduce`。
+- batch decode 已修复：干净 E17/E18 均为 0 UNKNOWN、0 think 标签、0 cap hit。
+- 干净 E18 (`batch_size=4`, `dynamic_safe`) 完整评测吞吐达到 0.418 samples/sec，但显存升至 29.28 / 32.08 GB，适合作为吞吐候选，不是单请求延迟最优解。
+
+## profiling 字段说明
+
+当前 `profile_androidcontrol.py` 记录的耗时字段包括：
+
+- `build_prompt_seconds`
+- `apply_chat_template_seconds`
+- `vision_preprocess_seconds`
+- `processor_encode_seconds`
+- `input_to_device_seconds`
+- `generate_seconds`
+- `decode_seconds`
+- `postprocess_seconds`
+- `total_seconds`
+
+输入侧 Python/processor 耗时主要是 `vision_preprocess_seconds`、`processor_encode_seconds`、`input_to_device_seconds`；输出侧可观察字段主要是 `generate_seconds`、`decode_seconds`、`postprocess_seconds`。
+
+注意：当前 profiling 尚未把 `generate_seconds` 内部细分成 prefill、TTFT 和逐 token decode，因此无法直接判断模型内部输入端 prefill 与输出端 decode 的精确占比。已有结果显示 `generate_seconds` 仍占 95% 左右，是主要耗时。
+
+## 远端常用命令
+
+准备 AndroidControl mini：
 
 ```bash
 python scripts/prepare_androidcontrol.py \
   --input data/raw/android_control/android_control-00000-of-00020 \
   --output_dir data/androidcontrol_mini \
   --num_episodes 10
-
-CUDA_VISIBLE_DEVICES=0,1 python scripts/eval_androidcontrol.py \
-  --model_path /data2/home/models/Qwen3.8-27B \
-  --test_json data/androidcontrol_mini/test.json \
-  --output results/qwen_androidcontrol_mini.json
-
-CUDA_VISIBLE_DEVICES=0,1 python scripts/profile_single_image.py \
-  --model_path /data2/home/models/Qwen3.8-27B \
-  --image data/androidcontrol_mini/images/episode_0/step_0.png \
-  --instruction "目标任务：打开设置\n当前步骤：点击设置图标" \
-  --output results/profile_single_image.json \
-  --warmup 1 \
-  --repeats 3 \
-  --max_new_tokens 128
-
-CUDA_VISIBLE_DEVICES=0,1 python scripts/profile_androidcontrol.py \
-  --model_path /data2/home/models/Qwen3.8-27B \
-  --test_json data/androidcontrol_mini/test.json \
-  --output results/profile_androidcontrol_mini.json \
-  --limit 5 \
-  --warmup 1 \
-  --max_new_tokens 128
 ```
 
-Current calibrated results from `results/qwen_androidcontrol_mini.json`
-generated at 2026-08-29 21:45 CST:
-- 10 trajectories, 51 steps.
-- strict type accuracy: 80.39%.
-- strict step success rate: 74.51%.
-- strict trajectory success rate: 40.00%.
-- primary metric view: `gui_only`.
-- `gui_only` type accuracy: 97.30%.
-- `gui_only` step success rate: 91.89%.
-- `gui_only` trajectory success rate: 80.00%.
-- `transition_or_noop` (`OPEN_APP` + `WAIT`) step success rate: 28.57%.
-- average latency: 4.62 seconds/step.
-- average output tokens: 19.94.
-- peak GPU memory: GPU0 25.14 GB, GPU1 28.39 GB.
+运行当前推荐单请求方案：
 
-Current profiling results from `results/profile_androidcontrol_mini.json`
-generated at 2026-08-29 21:45 CST:
-- AndroidControl mini profile over 5 steps: total mean 3.41s, generate mean
-  3.25s, generate share 95.18%, average output tokens 13.2.
-- Single image profile over 3 repeats: total mean 9.17s, generate mean 8.97s,
-  generate share 97.89%, average output tokens 60.0. This file was not rerun
-  after the latest calibration.
-- Vision preprocessing is about 0.10s and is not the main bottleneck.
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/eval_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/accel_followup_clean/E11_recheck/eval.json \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce
 
-Resolved calibration issues:
-- Thinking/long output is resolved for AndroidControl mini: 0/51 outputs contain
-  `</think>`, 0/51 hit `max_new_tokens=128`, and average output tokens are about
-  20.
-- Malformed JSON no longer creates UNKNOWN predictions in the latest eval:
-  `pred_type == UNKNOWN` is 0/51.
-- `SCROLL[UP/DOWN]` direction is calibrated to AndroidControl content/page
-  direction instead of finger movement direction; SCROLL step success is 7/7.
-- `OPEN_APP` and `WAIT` are separated from ordinary GUI actions via metric
-  views: `strict`, `gui_only`, `transition_or_noop`, `open_app`, `wait`, and
-  `by_gt_type`.
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/accel_followup_clean/E11_recheck/profile.json \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce
+```
 
-Known issues before acceleration work:
-- `WAIT` is noisy for static single-frame evaluation and should continue to be
-  reported separately.
-- `OPEN_APP` is an environment-level action and should continue to be reported
-  separately from ordinary GUI actions.
-- `LONG_PRESS` has only one sample and currently fails; decide whether to add it
-  to the action contract or exclude it from the primary GUI-only view.
-- A small number of CLICK failures remain coordinate-localization errors.
-- GPU memory collection is best-effort; CUDA reset/read failures are warnings,
-  not evaluation blockers.
+通过 launcher 指定 GPU 并断点续跑：
 
-Current analysis documents:
+```bash
+nohup env CUDA_VISIBLE_DEVICES=4,5 python scripts/run_accel_experiments.py \
+  --resume \
+  --output_root results/accel_followup_clean \
+  > results/accel_followup_clean/launcher.log 2>&1 &
+```
+
+或使用 launcher 参数指定 GPU：
+
+```bash
+nohup python scripts/run_accel_experiments.py \
+  --gpus 4,5 \
+  --resume \
+  --output_root results/accel_followup_clean \
+  > results/accel_followup_clean/launcher.log 2>&1 &
+```
+
+注意不要把多个后台任务写到同一个 `launcher.log`，否则日志会覆盖或混写。新实验建议使用独立 output root 或独立 log 文件。
+
+## 建议下一步实验
+
+优先补齐 E19/E20，验证修复后的 batch decode 与固定 `aggressive_reduce` 是否能叠加收益：
+
+```bash
+OUT_DIR=results/accel_followup_clean/E19_batch2_aggressive
+mkdir -p "${OUT_DIR}"
+CUDA_VISIBLE_DEVICES=4,5 python scripts/eval_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/eval.json" \
+  --max_new_tokens 48 \
+  --batch_size 2 \
+  --visual_token_mode aggressive_reduce
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/profile.json" \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --batch_size 2 \
+  --visual_token_mode aggressive_reduce
+```
+
+```bash
+OUT_DIR=results/accel_followup_clean/E20_batch4_aggressive
+mkdir -p "${OUT_DIR}"
+CUDA_VISIBLE_DEVICES=4,5 python scripts/eval_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/eval.json" \
+  --max_new_tokens 48 \
+  --batch_size 4 \
+  --visual_token_mode aggressive_reduce
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/profile.json" \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --batch_size 4 \
+  --visual_token_mode aggressive_reduce
+```
+
+后续可考虑的输出端压缩方向：
+
+- 尝试 `max_new_tokens=44` / `40`，确认是否仍无截断。
+- 增加 stop-on-valid-action，在第一个完整 JSON action 后停止生成。
+- 评估更短 action 协议，例如 `TAP 431 70`、`SWIPE 500 700 500 300`，但需要重新验证 parser 与准确率。
+
+## 分析文档
+
+当前主要分析文档：
+
 - `docs/2026-08-29_androidcontrol_baseline_analysis.md`
 - `docs/2026-08-29_androidcontrol_calibration_rerun_analysis.md`
 - `docs/2026-08-29_inference_acceleration_experiment_plan.md`
-
-Recommended next work:
-- Start inference acceleration experiments using
-  `docs/2026-08-29_inference_acceleration_experiment_plan.md`.
-- First run `E00-E03` to choose the lowest safe `max_new_tokens` cap.
-- Then compare attention and dtype options (`sdpa`, `flash_attention_2`,
-  `bfloat16`, `float16`) using the selected decode cap.
-- Only after accuracy is stable, evaluate visual-token reduction, static
-  batching, and serving backends.
-- Every experiment must fully record `strict`, `gui_only`,
-  `transition_or_noop`, `open_app`, `wait`, and `by_gt_type` metrics, plus
-  output-health, latency/profile, and memory/resource metrics.
+- `docs/2026-08-30_inference_acceleration_results_analysis.md`
