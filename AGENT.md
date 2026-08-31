@@ -284,3 +284,34 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
 - `docs/2026-08-29_androidcontrol_calibration_rerun_analysis.md`
 - `docs/2026-08-29_inference_acceleration_experiment_plan.md`
 - `docs/2026-08-30_inference_acceleration_results_analysis.md`
+
+
+
+## Execution Efficiency and Validation Policy
+
+Optimize for low token usage and short execution time while preserving correctness.
+
+* Perform only the analysis, code review, and testing necessary for the current task.
+* Prefer targeted inspection over repository-wide exploration. Read only files directly related to the requested change unless additional context is required.
+* Prefer targeted tests for modified components over full test suites.
+* Do not run full regression, integration, benchmark, lint, format, build, or static-analysis suites unless:
+
+  * the change directly affects a broad/shared component,
+  * targeted validation is insufficient,
+  * or the user explicitly requests them.
+* Avoid repeating tests or inspections when the relevant result is already available and no related code has changed since.
+* Do not perform speculative refactoring, cleanup, optimization, documentation changes, or unrelated issue investigation.
+* Avoid exhaustive review of unchanged code. Review the modified code and its directly affected interfaces/dependencies.
+* Reuse existing project scripts, test commands, documentation, and prior context instead of rediscovering repository structure unnecessarily.
+* When multiple validation methods are available, choose the cheapest method that provides sufficient confidence.
+* For small/local changes, a minimal validation sequence is preferred:
+
+  1. inspect the relevant implementation and interfaces;
+  2. make the requested change;
+  3. run the smallest relevant test/check;
+  4. inspect the resulting diff.
+* Escalate to broader tests only when the targeted check fails, reveals uncertainty, or the change has significant cross-module impact.
+* Do not spend tokens narrating routine repository exploration or obvious implementation details. Keep progress reports and final summaries concise.
+* If a potentially expensive check is skipped, mention it briefly in the final summary rather than running it automatically.
+
+The default principle is **minimum sufficient verification**, not maximum possible verification.
