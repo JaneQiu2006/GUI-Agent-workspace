@@ -1,0 +1,121 @@
+
+===== 2026-09-01T02:18:20.091782+00:00 py_compile: /data4/home/qiujiamin/anaconda3/envs/gui/bin/python -m py_compile test_framework/cache_fingerprint.py test_framework/cache_store.py test_framework/cache_inference.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/run_cache_extension_comparison.py =====
+GPU_MEMORY_WARNING reset_peak_memory_stats(cuda:0) failed: Invalid device argument 
+GPU_MEMORY_WARNING reset_peak_memory_stats(cuda:1) failed: Invalid device argument : did you call init?
+Loading weights:   0%|          | 0/1184 [00:00<?, ?it/s]Loading weights:   0%|          | 2/1184 [00:00<02:17,  8.57it/s]Loading weights:   1%|          | 14/1184 [00:00<00:25, 46.49it/s]Loading weights:   2%|▏         | 22/1184 [00:00<00:23, 49.37it/s]Loading weights:   2%|▏         | 29/1184 [00:00<00:21, 53.65it/s]Loading weights:   3%|▎         | 41/1184 [00:00<00:16, 70.43it/s]Loading weights:   4%|▍         | 49/1184 [00:00<00:22, 51.29it/s]Loading weights:   5%|▌         | 62/1184 [00:01<00:16, 66.03it/s]Loading weights:   6%|▌         | 70/1184 [00:01<00:19, 56.76it/s]Loading weights:   7%|▋         | 79/1184 [00:01<00:18, 60.97it/s]Loading weights:   7%|▋         | 86/1184 [00:01<00:17, 62.72it/s]Loading weights:   8%|▊         | 94/1184 [00:01<00:17, 62.32it/s]Loading weights:   9%|▊         | 101/1184 [00:01<00:22, 48.52it/s]Loading weights:  10%|▉         | 115/1184 [00:01<00:16, 66.26it/s]Loading weights:  10%|█         | 123/1184 [00:02<00:17, 59.00it/s]Loading weights:  11%|█         | 133/1184 [00:02<00:15, 66.43it/s]Loading weights:  12%|█▏        | 141/1184 [00:02<00:15, 67.99it/s]Loading weights:  13%|█▎        | 149/1184 [00:02<00:19, 54.20it/s]Loading weights:  14%|█▍        | 169/1184 [00:02<00:12, 78.41it/s]Loading weights:  15%|█▌        | 178/1184 [00:02<00:13, 74.84it/s]Loading weights:  16%|█▌        | 187/1184 [00:03<00:15, 65.67it/s]Loading weights:  16%|█▋        | 195/1184 [00:03<00:14, 67.24it/s]Loading weights:  17%|█▋        | 203/1184 [00:03<00:15, 62.02it/s]Loading weights:  18%|█▊        | 210/1184 [00:03<00:16, 59.12it/s]Loading weights:  19%|█▉        | 224/1184 [00:03<00:12, 75.07it/s]Loading weights:  20%|█▉        | 235/1184 [00:03<00:11, 81.26it/s]Loading weights:  21%|██        | 244/1184 [00:03<00:11, 80.35it/s]Loading weights:  21%|██▏       | 254/1184 [00:03<00:11, 84.32it/s]Loading weights:  22%|██▏       | 263/1184 [00:04<00:12, 76.27it/s]Loading weights:  23%|██▎       | 274/1184 [00:04<00:10, 83.13it/s]Loading weights:  24%|██▍       | 283/1184 [00:04<00:11, 80.34it/s]Loading weights:  25%|██▍       | 293/1184 [00:04<00:11, 74.36it/s]Loading weights:  26%|██▌       | 305/1184 [00:04<00:10, 82.93it/s]Loading weights:  27%|██▋       | 314/1184 [00:04<00:15, 56.32it/s]Loading weights:  28%|██▊       | 326/1184 [00:04<00:12, 67.15it/s]Loading weights:  28%|██▊       | 335/1184 [00:05<00:14, 59.58it/s]Loading weights:  29%|██▉       | 345/1184 [00:05<00:12, 66.05it/s]Loading weights:  30%|██▉       | 353/1184 [00:05<00:12, 64.55it/s]Loading weights:  30%|███       | 361/1184 [00:05<00:13, 60.97it/s]Loading weights:  31%|███       | 368/1184 [00:05<00:13, 59.86it/s]Loading weights:  32%|███▏      | 384/1184 [00:05<00:11, 68.51it/s]Loading weights:  34%|███▎      | 397/1184 [00:06<00:10, 76.29it/s]Loading weights:  34%|███▍      | 406/1184 [00:06<00:10, 75.44it/s]Loading weights:  35%|███▍      | 414/1184 [00:06<00:11, 68.20it/s]Loading weights:  74%|███████▍  | 879/1184 [00:06<00:00, 1115.02it/s]Loading weights:  99%|█████████▉| 1177/1184 [00:06<00:00, 1533.98it/s]Loading weights: 100%|██████████| 1184/1184 [00:06<00:00, 181.32it/s] 
+Some parameters are on the meta device because they were offloaded to the cpu.
+[W901 10:18:35.858107274 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 44040192 bytes (free: 39059456, total: 85093777408).
+Traceback (most recent call last):
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/scripts/eval_androidcontrol.py", line 533, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/scripts/eval_androidcontrol.py", line 449, in main
+    result = evaluate_records(
+             ^^^^^^^^^^^^^^^^^
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/scripts/eval_androidcontrol.py", line 327, in evaluate_records
+    infer_one(
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/test_framework/hf_gui_baseline.py", line 366, in infer_one
+    raw_response, latency, output_tokens = generate_response(
+                                           ^^^^^^^^^^^^^^^^^^
+  File "/data1/home/qiujiamin/GUI-Agent-workspace/test_framework/hf_gui_baseline.py", line 295, in generate_response
+    generated_ids = model.generate(
+                    ^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/generation/utils.py", line 2668, in generate
+    result = decoding_method(
+             ^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/generation/utils.py", line 2868, in _sample
+    outputs = self._prefill(
+              ^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/generation/utils.py", line 3948, in _prefill
+    return self(**model_inputs, return_dict=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/accelerate/hooks.py", line 192, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/utils/generic.py", line 939, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1769, in forward
+    outputs = self.model(
+              ^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/utils/generic.py", line 939, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1562, in forward
+    outputs = self.language_model(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/utils/generic.py", line 1068, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/utils/output_capturing.py", line 262, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1206, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/modeling_layers.py", line 114, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/accelerate/hooks.py", line 192, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 771, in forward
+    hidden_states = self.linear_attn(
+                    ^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/accelerate/hooks.py", line 192, in new_forward
+    output = module._old_forward(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/integrations/accelerate.py", line 1010, in wrapped
+    output = forward_func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 522, in forward
+    core_attn_out, last_recurrent_state = torch_chunk_gated_delta_rule(
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/integrations/hub_kernels.py", line 861, in wrapped
+    return implementation(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 263, in torch_chunk_gated_delta_rule
+    query = l2norm(query, dim=-1, eps=1e-6)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data4/home/qiujiamin/anaconda3/envs/gui/lib/python3.11/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 244, in l2norm
+    inv_norm = torch.rsqrt((x * x).sum(dim=dim, keepdim=True) + eps)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+For more detailed error information, run with CUDA_LOG_FILE=stderr
+
+
+===== 2026-09-01T02:18:20.150943+00:00 eval: /data4/home/qiujiamin/anaconda3/envs/gui/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --output /data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_debug/E11_baseline/eval.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode aggressive_reduce --point_tolerance 100.0 --page_cache_mode off --page_cache_scope trajectory --page_cache_similarity tile --page_cache_max_entries 128 --page_cache_near_dhash_threshold 4 --page_cache_near_tile_threshold 0.98 --page_cache_patch_tile_threshold 0.9 --page_cache_patch_max_changed_area_ratio 0.25 --page_cache_tile_rows 8 --page_cache_tile_cols 16 --page_cache_ignored_top_ratio 0.0 --page_cache_ignored_bottom_ratio 0.0 =====

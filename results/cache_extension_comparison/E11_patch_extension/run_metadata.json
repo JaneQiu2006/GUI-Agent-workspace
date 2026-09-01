@@ -1,0 +1,51 @@
+{
+  "experiment": {
+    "experiment_id": "E11_patch_extension",
+    "label": "E11 + Page-level baseline + Patch-level extension",
+    "page_cache_mode": "inputs",
+    "page_cache_similarity": "tile",
+    "page_cache_scope": "trajectory",
+    "notes": "Exact processor-input cache plus tile diff, changed bbox, stable tile hashes, and patch risk gating."
+  },
+  "status": "failed",
+  "created_at": "2026-09-01T02:10:45.778231+00:00",
+  "ended_at": "2026-09-01T02:11:02.711298+00:00",
+  "commands": [
+    {
+      "name": "py_compile",
+      "command": "/data4/home/qiujiamin/anaconda3/envs/gui/bin/python -m py_compile test_framework/cache_fingerprint.py test_framework/cache_store.py test_framework/cache_inference.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/run_cache_extension_comparison.py"
+    },
+    {
+      "name": "eval",
+      "command": "/data4/home/qiujiamin/anaconda3/envs/gui/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --output /data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison/E11_patch_extension/eval.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode aggressive_reduce --point_tolerance 100.0 --page_cache_mode inputs --page_cache_scope trajectory --page_cache_similarity tile --page_cache_max_entries 128 --page_cache_near_dhash_threshold 4 --page_cache_near_tile_threshold 0.98 --page_cache_patch_tile_threshold 0.9 --page_cache_patch_max_changed_area_ratio 0.25 --page_cache_tile_rows 8 --page_cache_tile_cols 16 --page_cache_ignored_top_ratio 0.0 --page_cache_ignored_bottom_ratio 0.0"
+    },
+    {
+      "name": "profile_ttft",
+      "command": "/data4/home/qiujiamin/anaconda3/envs/gui/bin/python scripts/profile_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --output /data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison/E11_patch_extension/profile.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode aggressive_reduce --point_tolerance 100.0 --page_cache_mode inputs --page_cache_scope trajectory --page_cache_similarity tile --page_cache_max_entries 128 --page_cache_near_dhash_threshold 4 --page_cache_near_tile_threshold 0.98 --page_cache_patch_tile_threshold 0.9 --page_cache_patch_max_changed_area_ratio 0.25 --page_cache_tile_rows 8 --page_cache_tile_cols 16 --page_cache_ignored_top_ratio 0.0 --page_cache_ignored_bottom_ratio 0.0 --limit 5 --warmup 1 --generation_profile_mode manual_greedy"
+    }
+  ],
+  "steps": [
+    {
+      "name": "py_compile",
+      "return_code": 0,
+      "ended_at": "2026-09-01T02:10:45.839177+00:00"
+    },
+    {
+      "name": "eval",
+      "return_code": 1,
+      "ended_at": "2026-09-01T02:11:02.710874+00:00"
+    }
+  ],
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "0,6",
+    "ASCEND_RT_VISIBLE_DEVICES": null,
+    "NVIDIA_VISIBLE_DEVICES": null,
+    "PYTHONPATH": null,
+    "CONDA_DEFAULT_ENV": "gui",
+    "VIRTUAL_ENV": null
+  },
+  "notes": [
+    "Exact processor-input cache plus tile diff, changed bbox, stable tile hashes, and patch risk gating."
+  ],
+  "wall_clock_seconds": 16.93266852851957
+}
