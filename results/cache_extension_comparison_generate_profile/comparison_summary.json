@@ -1,0 +1,705 @@
+{
+  "created_at": "2026-09-01T03:21:47.636797+00:00",
+  "e11_config": {
+    "max_new_tokens": 48,
+    "visual_token_mode": "aggressive_reduce",
+    "batch_size": 1,
+    "dtype": "auto",
+    "attn_implementation": null
+  },
+  "profile": {
+    "generation_profile_mode": "generate",
+    "profile_limit": 5,
+    "warmup": 1
+  },
+  "experiments": {
+    "E11_baseline": {
+      "label": "E11 baseline",
+      "out_dir": "/data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_generate_profile/E11_baseline",
+      "status": "success",
+      "failed_step": null,
+      "failure_tail": {},
+      "eval": {
+        "strict": {
+          "num_steps": 51,
+          "type_accuracy": 0.8235294117647058,
+          "step_success_rate": 0.7647058823529411,
+          "trajectory_success_rate": 0.4,
+          "avg_latency_seconds": 2.6339188537870846
+        },
+        "gui_only": {
+          "num_steps": 37,
+          "type_accuracy": 0.972972972972973,
+          "step_success_rate": 0.918918918918919,
+          "trajectory_success_rate": 0.8,
+          "avg_latency_seconds": 2.849364568680726
+        },
+        "transition_or_noop": {
+          "num_steps": 14,
+          "type_accuracy": 0.42857142857142855,
+          "step_success_rate": 0.35714285714285715,
+          "trajectory_success_rate": 0.3333333333333333,
+          "avg_latency_seconds": 2.0645266072824597
+        },
+        "open_app": {
+          "num_steps": 6,
+          "type_accuracy": 0.8333333333333334,
+          "step_success_rate": 0.6666666666666666,
+          "trajectory_success_rate": 0.6666666666666666,
+          "avg_latency_seconds": 2.0075654787942767
+        },
+        "wait": {
+          "num_steps": 8,
+          "type_accuracy": 0.125,
+          "step_success_rate": 0.125,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 2.107247453648597
+        },
+        "by_gt_type": {
+          "CLICK": {
+            "num_steps": 24,
+            "type_accuracy": 1.0,
+            "step_success_rate": 0.9166666666666666,
+            "trajectory_success_rate": 0.7777777777777778,
+            "avg_latency_seconds": 2.454241193869772
+          },
+          "LONG_PRESS": {
+            "num_steps": 1,
+            "type_accuracy": 0.0,
+            "step_success_rate": 0.0,
+            "trajectory_success_rate": 0.0,
+            "avg_latency_seconds": 2.454379089176655
+          },
+          "OPEN_APP": {
+            "num_steps": 6,
+            "type_accuracy": 0.8333333333333334,
+            "step_success_rate": 0.6666666666666666,
+            "trajectory_success_rate": 0.6666666666666666,
+            "avg_latency_seconds": 2.0075654787942767
+          },
+          "PRESS_BACK": {
+            "num_steps": 2,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 1.290258807130158
+          },
+          "SCROLL": {
+            "num_steps": 7,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 4.916200570229973
+          },
+          "TYPE": {
+            "num_steps": 3,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 2.3587998977551856
+          },
+          "WAIT": {
+            "num_steps": 8,
+            "type_accuracy": 0.125,
+            "step_success_rate": 0.125,
+            "trajectory_success_rate": 0.0,
+            "avg_latency_seconds": 2.107247453648597
+          }
+        },
+        "output_health": {
+          "pred_unknown": 0,
+          "contains_think_end": 0,
+          "hit_max_new_tokens": 0,
+          "json_enclosed": 51,
+          "avg_input_tokens": 1231.3921568627452,
+          "avg_output_tokens": 19.03921568627451,
+          "min_output_tokens": 6,
+          "median_output_tokens": 18,
+          "max_output_tokens": 42
+        },
+        "avg_latency_seconds": 2.6339188537870846,
+        "median_latency_seconds": 2.4574592718854547,
+        "wall_clock_seconds": 138.99289922323078,
+        "samples_per_second": 0.36692521909404163,
+        "peak_gpu_memory_gb": {
+          "0": 24.3086,
+          "1": 27.6791
+        }
+      },
+      "profile": {
+        "primary_timings_seconds": {
+          "build_prompt_seconds": {
+            "mean": 1.965165138244629e-05,
+            "min": 1.467578113079071e-05,
+            "max": 3.282446414232254e-05,
+            "median": 1.5748664736747742e-05
+          },
+          "apply_chat_template_seconds": {
+            "mean": 0.00031767524778842927,
+            "min": 0.00021273363381624222,
+            "max": 0.0004905359819531441,
+            "median": 0.00023739878088235855
+          },
+          "vision_preprocess_seconds": {
+            "mean": 0.07948991395533085,
+            "min": 0.06504878215491772,
+            "max": 0.09270956926047802,
+            "median": 0.0847249710932374
+          },
+          "processor_encode_seconds": {
+            "mean": 0.008877667598426342,
+            "min": 0.007092866115272045,
+            "max": 0.01065968256443739,
+            "median": 0.008655702695250511
+          },
+          "input_to_device_seconds": {
+            "mean": 0.001291298121213913,
+            "min": 0.001113956794142723,
+            "max": 0.001600346527993679,
+            "median": 0.0012394078075885773
+          },
+          "generate_seconds": {
+            "mean": 1.9984848069027066,
+            "min": 1.3216899298131466,
+            "max": 2.4864463256672025,
+            "median": 1.9088313886895776
+          },
+          "decode_seconds": {
+            "mean": 0.00021134447306394576,
+            "min": 0.00014439597725868225,
+            "max": 0.00029953382909297943,
+            "median": 0.00016867462545633316
+          },
+          "postprocess_seconds": {
+            "mean": 6.331577897071839e-05,
+            "min": 3.397651016712189e-05,
+            "max": 9.90498811006546e-05,
+            "median": 4.334188997745514e-05
+          },
+          "total_seconds": {
+            "mean": 2.088811131194234,
+            "min": 1.416772160679102,
+            "max": 2.566799983382225,
+            "median": 2.0039799381047487
+          }
+        },
+        "avg_input_tokens": 1221.8,
+        "avg_output_tokens": 13.0,
+        "effective_batch_size": 1,
+        "samples_per_second": 0.4784635046787123,
+        "output_tokens_per_second": 6.2200255608232595,
+        "final_memory": null
+      },
+      "cache": {
+        "eval": {
+          "mode": "off",
+          "num_records": 0
+        },
+        "profile": {
+          "mode": "off",
+          "num_records": 0
+        }
+      }
+    },
+    "E11_page_baseline": {
+      "label": "E11 + Page-level baseline",
+      "out_dir": "/data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_generate_profile/E11_page_baseline",
+      "status": "success",
+      "failed_step": null,
+      "failure_tail": {},
+      "eval": {
+        "strict": {
+          "num_steps": 51,
+          "type_accuracy": 0.8235294117647058,
+          "step_success_rate": 0.7647058823529411,
+          "trajectory_success_rate": 0.4,
+          "avg_latency_seconds": 2.8058064733905828
+        },
+        "gui_only": {
+          "num_steps": 37,
+          "type_accuracy": 0.972972972972973,
+          "step_success_rate": 0.918918918918919,
+          "trajectory_success_rate": 0.8,
+          "avg_latency_seconds": 2.976655873545521
+        },
+        "transition_or_noop": {
+          "num_steps": 14,
+          "type_accuracy": 0.42857142857142855,
+          "step_success_rate": 0.35714285714285715,
+          "trajectory_success_rate": 0.3333333333333333,
+          "avg_latency_seconds": 2.354275915838246
+        },
+        "open_app": {
+          "num_steps": 6,
+          "type_accuracy": 0.8333333333333334,
+          "step_success_rate": 0.6666666666666666,
+          "trajectory_success_rate": 0.6666666666666666,
+          "avg_latency_seconds": 2.3189100028636553
+        },
+        "wait": {
+          "num_steps": 8,
+          "type_accuracy": 0.125,
+          "step_success_rate": 0.125,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 2.3808003505691886
+        },
+        "by_gt_type": {
+          "CLICK": {
+            "num_steps": 24,
+            "type_accuracy": 1.0,
+            "step_success_rate": 0.9166666666666666,
+            "trajectory_success_rate": 0.7777777777777778,
+            "avg_latency_seconds": 2.5436647983733565
+          },
+          "LONG_PRESS": {
+            "num_steps": 1,
+            "type_accuracy": 0.0,
+            "step_success_rate": 0.0,
+            "trajectory_success_rate": 0.0,
+            "avg_latency_seconds": 2.546882542781532
+          },
+          "OPEN_APP": {
+            "num_steps": 6,
+            "type_accuracy": 0.8333333333333334,
+            "step_success_rate": 0.6666666666666666,
+            "trajectory_success_rate": 0.6666666666666666,
+            "avg_latency_seconds": 2.3189100028636553
+          },
+          "PRESS_BACK": {
+            "num_steps": 2,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 1.326817656867206
+          },
+          "SCROLL": {
+            "num_steps": 7,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 5.173472590877542
+          },
+          "TYPE": {
+            "num_steps": 3,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 2.5578287225216627
+          },
+          "WAIT": {
+            "num_steps": 8,
+            "type_accuracy": 0.125,
+            "step_success_rate": 0.125,
+            "trajectory_success_rate": 0.0,
+            "avg_latency_seconds": 2.3808003505691886
+          }
+        },
+        "output_health": {
+          "pred_unknown": 0,
+          "contains_think_end": 0,
+          "hit_max_new_tokens": 0,
+          "json_enclosed": 51,
+          "avg_input_tokens": 1231.3921568627452,
+          "avg_output_tokens": 19.03921568627451,
+          "min_output_tokens": 6,
+          "median_output_tokens": 18,
+          "max_output_tokens": 42
+        },
+        "avg_latency_seconds": 2.8058064733905828,
+        "median_latency_seconds": 2.484674833714962,
+        "wall_clock_seconds": 151.56745208986104,
+        "samples_per_second": 0.336483851227922,
+        "peak_gpu_memory_gb": {
+          "0": 24.3086,
+          "1": 27.6791
+        }
+      },
+      "profile": {
+        "primary_timings_seconds": {
+          "build_prompt_seconds": {
+            "mean": 1.798141747713089e-05,
+            "min": 1.3653188943862915e-05,
+            "max": 2.6756897568702698e-05,
+            "median": 1.5710480511188507e-05
+          },
+          "apply_chat_template_seconds": {
+            "mean": 0.00030193310230970384,
+            "min": 0.00022373534739017487,
+            "max": 0.00042847543954849243,
+            "median": 0.00026298779994249344
+          },
+          "vision_preprocess_seconds": {
+            "mean": 0.0784315425902605,
+            "min": 0.06397891417145729,
+            "max": 0.09911429043859243,
+            "median": 0.07745574694126844
+          },
+          "processor_encode_seconds": {
+            "mean": 0.009846068173646926,
+            "min": 0.008443137630820274,
+            "max": 0.011067266575992107,
+            "median": 0.009811867959797382
+          },
+          "input_to_device_seconds": {
+            "mean": 0.0013000240549445152,
+            "min": 0.0012374510988593102,
+            "max": 0.0013732686638832092,
+            "median": 0.0012865271419286728
+          },
+          "generate_seconds": {
+            "mean": 1.9877481661736964,
+            "min": 1.3259714068844914,
+            "max": 2.476059414446354,
+            "median": 1.8930289521813393
+          },
+          "decode_seconds": {
+            "mean": 0.000229463167488575,
+            "min": 0.00015655066817998886,
+            "max": 0.0003097793087363243,
+            "median": 0.0002307174727320671
+          },
+          "postprocess_seconds": {
+            "mean": 6.47546723484993e-05,
+            "min": 3.508757799863815e-05,
+            "max": 9.479746222496033e-05,
+            "median": 6.878096610307693e-05
+          },
+          "total_seconds": {
+            "mean": 2.1551459338515997,
+            "min": 1.5066340593621135,
+            "max": 2.6236597457900643,
+            "median": 2.064130241982639
+          }
+        },
+        "avg_input_tokens": 1221.8,
+        "avg_output_tokens": 13.0,
+        "effective_batch_size": 1,
+        "samples_per_second": 0.4637515133089411,
+        "output_tokens_per_second": 6.028769673016234,
+        "final_memory": null
+      },
+      "cache": {
+        "eval": {
+          "mode": "inputs",
+          "num_records": 51,
+          "page_cache_hit_rate": 0.0,
+          "processor_cache_hit_rate": 0.0,
+          "patch_candidate_rate": 0.0,
+          "patch_candidate_allowed_rate": 0.0,
+          "page_cache_hit_types": {
+            "miss": 51
+          },
+          "avg_tile_unchanged_ratio": 0.18140243902439024,
+          "avg_similarity_dhash_hamming": 21.29268292682927,
+          "avg_changed_tile_count": 84.23529411764706,
+          "avg_changed_bbox_area_ratio": 0.7040441176470589,
+          "patch_risk_reasons": {
+            "changed_bbox_area_too_large": 40
+          },
+          "cache_evictions": 0,
+          "cache_entries": 20
+        },
+        "profile": {
+          "mode": "inputs",
+          "num_records": 5,
+          "page_cache_hit_rate": 0.0,
+          "processor_cache_hit_rate": 0.0,
+          "patch_candidate_rate": 0.0,
+          "patch_candidate_allowed_rate": 0.0,
+          "page_cache_hit_types": {
+            "miss": 5
+          },
+          "avg_tile_unchanged_ratio": 0.013020833333333334,
+          "avg_similarity_dhash_hamming": 25.0,
+          "avg_changed_tile_count": 75.8,
+          "avg_changed_bbox_area_ratio": 0.6,
+          "patch_risk_reasons": {
+            "changed_bbox_area_too_large": 3
+          },
+          "cache_evictions": 0,
+          "cache_entries": 4
+        }
+      }
+    },
+    "E11_patch_extension": {
+      "label": "E11 + Page-level baseline + Patch-level extension",
+      "out_dir": "/data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_generate_profile/E11_patch_extension",
+      "status": "success",
+      "failed_step": null,
+      "failure_tail": {},
+      "eval": {
+        "strict": {
+          "num_steps": 51,
+          "type_accuracy": 0.8235294117647058,
+          "step_success_rate": 0.7647058823529411,
+          "trajectory_success_rate": 0.4,
+          "avg_latency_seconds": 2.6086119503586316
+        },
+        "gui_only": {
+          "num_steps": 37,
+          "type_accuracy": 0.972972972972973,
+          "step_success_rate": 0.918918918918919,
+          "trajectory_success_rate": 0.8,
+          "avg_latency_seconds": 2.813060151010349
+        },
+        "transition_or_noop": {
+          "num_steps": 14,
+          "type_accuracy": 0.42857142857142855,
+          "step_success_rate": 0.35714285714285715,
+          "trajectory_success_rate": 0.3333333333333333,
+          "avg_latency_seconds": 2.0682845629219497
+        },
+        "open_app": {
+          "num_steps": 6,
+          "type_accuracy": 0.8333333333333334,
+          "step_success_rate": 0.6666666666666666,
+          "trajectory_success_rate": 0.6666666666666666,
+          "avg_latency_seconds": 2.0037234416231513
+        },
+        "wait": {
+          "num_steps": 8,
+          "type_accuracy": 0.125,
+          "step_success_rate": 0.125,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 2.1167054038960487
+        },
+        "by_gt_type": {
+          "CLICK": {
+            "num_steps": 24,
+            "type_accuracy": 1.0,
+            "step_success_rate": 0.9166666666666666,
+            "trajectory_success_rate": 0.7777777777777778,
+            "avg_latency_seconds": 2.427975161699578
+          },
+          "LONG_PRESS": {
+            "num_steps": 1,
+            "type_accuracy": 0.0,
+            "step_success_rate": 0.0,
+            "trajectory_success_rate": 0.0,
+            "avg_latency_seconds": 2.416464922018349
+          },
+          "OPEN_APP": {
+            "num_steps": 6,
+            "type_accuracy": 0.8333333333333334,
+            "step_success_rate": 0.6666666666666666,
+            "trajectory_success_rate": 0.6666666666666666,
+            "avg_latency_seconds": 2.0037234416231513
+          },
+          "PRESS_BACK": {
+            "num_steps": 2,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 1.3089819732122123
+          },
+          "SCROLL": {
+            "num_steps": 7,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 4.843421179269042
+          },
+          "TYPE": {
+            "num_steps": 3,
+            "type_accuracy": 1.0,
+            "step_success_rate": 1.0,
+            "trajectory_success_rate": 1.0,
+            "avg_latency_seconds": 2.2911481944223246
+          },
+          "WAIT": {
+            "num_steps": 8,
+            "type_accuracy": 0.125,
+            "step_success_rate": 0.125,
+            "trajectory_success_rate": 0.0,
+            "avg_latency_seconds": 2.1167054038960487
+          }
+        },
+        "output_health": {
+          "pred_unknown": 0,
+          "contains_think_end": 0,
+          "hit_max_new_tokens": 0,
+          "json_enclosed": 51,
+          "avg_input_tokens": 1231.3921568627452,
+          "avg_output_tokens": 19.03921568627451,
+          "min_output_tokens": 6,
+          "median_output_tokens": 18,
+          "max_output_tokens": 42
+        },
+        "avg_latency_seconds": 2.6086119503586316,
+        "median_latency_seconds": 2.4250146551057696,
+        "wall_clock_seconds": 141.4309633364901,
+        "samples_per_second": 0.3605999619663318,
+        "peak_gpu_memory_gb": {
+          "0": 24.3086,
+          "1": 27.6791
+        }
+      },
+      "profile": {
+        "primary_timings_seconds": {
+          "build_prompt_seconds": {
+            "mean": 2.155974507331848e-05,
+            "min": 1.5620142221450806e-05,
+            "max": 2.9970891773700714e-05,
+            "median": 1.6405247151851654e-05
+          },
+          "apply_chat_template_seconds": {
+            "mean": 0.0003978388383984566,
+            "min": 0.0002527376636862755,
+            "max": 0.0005396353080868721,
+            "median": 0.0004004640504717827
+          },
+          "vision_preprocess_seconds": {
+            "mean": 0.08035818170756101,
+            "min": 0.06645646411925554,
+            "max": 0.10010087676346302,
+            "median": 0.07931650336831808
+          },
+          "processor_encode_seconds": {
+            "mean": 0.010351144708693027,
+            "min": 0.008330554701387882,
+            "max": 0.013130786828696728,
+            "median": 0.009309687651693821
+          },
+          "input_to_device_seconds": {
+            "mean": 0.0012709664180874825,
+            "min": 0.0011712061241269112,
+            "max": 0.0013343952596187592,
+            "median": 0.0013043927028775215
+          },
+          "generate_seconds": {
+            "mean": 2.053266068920493,
+            "min": 1.3138983491808176,
+            "max": 2.5177249647676945,
+            "median": 2.0395484594628215
+          },
+          "decode_seconds": {
+            "mean": 0.00021483860909938813,
+            "min": 0.00016900710761547089,
+            "max": 0.00030137505382299423,
+            "median": 0.0002056453377008438
+          },
+          "postprocess_seconds": {
+            "mean": 5.9765391051769255e-05,
+            "min": 3.784801810979843e-05,
+            "max": 0.0001033879816532135,
+            "median": 4.503317177295685e-05
+          },
+          "total_seconds": {
+            "mean": 2.235130096040666,
+            "min": 1.5051199411973357,
+            "max": 2.6639117440208793,
+            "median": 2.1880860356613994
+          }
+        },
+        "avg_input_tokens": 1221.8,
+        "avg_output_tokens": 13.0,
+        "effective_batch_size": 1,
+        "samples_per_second": 0.4471357341646486,
+        "output_tokens_per_second": 5.812764544140432,
+        "final_memory": null
+      },
+      "cache": {
+        "eval": {
+          "mode": "inputs",
+          "num_records": 51,
+          "page_cache_hit_rate": 0.0196078431372549,
+          "processor_cache_hit_rate": 0.0,
+          "patch_candidate_rate": 0.0196078431372549,
+          "patch_candidate_allowed_rate": 0.0196078431372549,
+          "page_cache_hit_types": {
+            "miss": 50,
+            "near": 1
+          },
+          "avg_tile_unchanged_ratio": 0.18140243902439024,
+          "avg_similarity_dhash_hamming": 21.29268292682927,
+          "avg_changed_tile_count": 84.23529411764706,
+          "avg_changed_bbox_area_ratio": 0.7040441176470589,
+          "patch_risk_reasons": {
+            "changed_bbox_area_too_large": 40
+          },
+          "cache_evictions": 0,
+          "cache_entries": 20
+        },
+        "profile": {
+          "mode": "inputs",
+          "num_records": 5,
+          "page_cache_hit_rate": 0.0,
+          "processor_cache_hit_rate": 0.0,
+          "patch_candidate_rate": 0.0,
+          "patch_candidate_allowed_rate": 0.0,
+          "page_cache_hit_types": {
+            "miss": 5
+          },
+          "avg_tile_unchanged_ratio": 0.013020833333333334,
+          "avg_similarity_dhash_hamming": 25.0,
+          "avg_changed_tile_count": 75.8,
+          "avg_changed_bbox_area_ratio": 0.6,
+          "patch_risk_reasons": {
+            "changed_bbox_area_too_large": 3
+          },
+          "cache_evictions": 0,
+          "cache_entries": 4
+        }
+      }
+    }
+  },
+  "summary_table": [
+    {
+      "experiment_id": "E11_baseline",
+      "label": "E11 baseline",
+      "status": "success",
+      "failed_step": null,
+      "stderr_tail_last_line": null,
+      "gui_only_type_accuracy": 0.972972972972973,
+      "gui_only_step_success_rate": 0.918918918918919,
+      "pred_unknown": 0,
+      "hit_max_new_tokens": 0,
+      "eval_avg_latency_seconds": 2.6339188537870846,
+      "profile_total_mean": 2.088811131194234,
+      "profile_generate_mean": 1.9984848069027066,
+      "profile_prefill_mean": null,
+      "profile_ttft_mean": null,
+      "processor_cache_hit_rate": null,
+      "patch_candidate_rate": null,
+      "patch_candidate_allowed_rate": null
+    },
+    {
+      "experiment_id": "E11_page_baseline",
+      "label": "E11 + Page-level baseline",
+      "status": "success",
+      "failed_step": null,
+      "stderr_tail_last_line": null,
+      "gui_only_type_accuracy": 0.972972972972973,
+      "gui_only_step_success_rate": 0.918918918918919,
+      "pred_unknown": 0,
+      "hit_max_new_tokens": 0,
+      "eval_avg_latency_seconds": 2.8058064733905828,
+      "profile_total_mean": 2.1551459338515997,
+      "profile_generate_mean": 1.9877481661736964,
+      "profile_prefill_mean": null,
+      "profile_ttft_mean": null,
+      "processor_cache_hit_rate": 0.0,
+      "patch_candidate_rate": 0.0,
+      "patch_candidate_allowed_rate": 0.0
+    },
+    {
+      "experiment_id": "E11_patch_extension",
+      "label": "E11 + Page-level baseline + Patch-level extension",
+      "status": "success",
+      "failed_step": null,
+      "stderr_tail_last_line": null,
+      "gui_only_type_accuracy": 0.972972972972973,
+      "gui_only_step_success_rate": 0.918918918918919,
+      "pred_unknown": 0,
+      "hit_max_new_tokens": 0,
+      "eval_avg_latency_seconds": 2.6086119503586316,
+      "profile_total_mean": 2.235130096040666,
+      "profile_generate_mean": 2.053266068920493,
+      "profile_prefill_mean": null,
+      "profile_ttft_mean": null,
+      "processor_cache_hit_rate": 0.0,
+      "patch_candidate_rate": 0.0,
+      "patch_candidate_allowed_rate": 0.0
+    }
+  ]
+}
