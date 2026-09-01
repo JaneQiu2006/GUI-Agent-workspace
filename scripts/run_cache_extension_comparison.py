@@ -170,8 +170,13 @@ def run_experiment(
             metadata["status"] = "failed"
             metadata["ended_at"] = utc_now()
             metadata["wall_clock_seconds"] = time.perf_counter() - started
+            metadata["failure_tail"] = {
+                "stdout": tail_text(stdout_log),
+                "stderr": tail_text(stderr_log),
+            }
             write_json(out_dir / "run_metadata.json", metadata)
             print(f"EXPERIMENT_FAILED {experiment.experiment_id} step={name} out_dir={out_dir}", flush=True)
+            print_failure_tail(metadata["failure_tail"])
             return "failed"
 
     metadata["status"] = "success"
@@ -310,10 +315,13 @@ def summarize_experiment(out_dir: Path, experiment: CacheComparisonExperiment) -
     profile_data = read_json(out_dir / "profile.json")
     eval_metrics = eval_data.get("metrics", {})
     profile_summary = profile_data.get("summary", {})
+    metadata = read_json(out_dir / "run_metadata.json")
     return {
         "label": experiment.label,
         "out_dir": str(out_dir),
-        "status": read_json(out_dir / "run_metadata.json").get("status", "missing"),
+        "status": metadata.get("status", "missing"),
+        "failed_step": failed_step(metadata),
+        "failure_tail": metadata.get("failure_tail", {}),
         "eval": summarize_eval_metrics(eval_metrics),
         "profile": summarize_profile_metrics(profile_summary),
         "cache": {
@@ -409,6 +417,8 @@ def build_summary_table(experiments: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "experiment_id": experiment_id,
                 "label": data.get("label"),
                 "status": data.get("status"),
+                "failed_step": data.get("failed_step"),
+                "stderr_tail_last_line": last_nonempty_line(data.get("failure_tail", {}).get("stderr")),
                 "gui_only_type_accuracy": gui_only.get("type_accuracy"),
                 "gui_only_step_success_rate": gui_only.get("step_success_rate"),
                 "pred_unknown": health.get("pred_unknown"),
@@ -424,6 +434,22 @@ def build_summary_table(experiments: Dict[str, Any]) -> List[Dict[str, Any]]:
             }
         )
     return rows
+
+
+def failed_step(metadata: Dict[str, Any]) -> Optional[str]:
+    if metadata.get("status") != "failed":
+        return None
+    for step in metadata.get("steps") or []:
+        if step.get("return_code") not in (None, 0):
+            return str(step.get("name"))
+    return None
+
+
+def last_nonempty_line(lines: Optional[List[str]]) -> Optional[str]:
+    for line in reversed(lines or []):
+        if str(line).strip():
+            return str(line)
+    return None
 
 
 def mean_value(summary: Optional[Dict[str, Any]]) -> Optional[float]:
@@ -455,6 +481,31 @@ def successful(out_dir: Path) -> bool:
         and (out_dir / "eval.json").is_file()
         and (out_dir / "profile.json").is_file()
     )
+
+
+def tail_text(path: Path, max_lines: int = 80) -> List[str]:
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as exc:
+        return [f"{type(exc).__name__}: {exc}"]
+    return lines[-max_lines:]
+
+
+def print_failure_tail(failure_tail: Dict[str, List[str]]) -> None:
+    stderr_lines = failure_tail.get("stderr") or []
+    stdout_lines = failure_tail.get("stdout") or []
+    if stderr_lines:
+        print("FAILED_STDERR_TAIL_BEGIN", file=sys.stderr, flush=True)
+        for line in stderr_lines:
+            print(line, file=sys.stderr, flush=True)
+        print("FAILED_STDERR_TAIL_END", file=sys.stderr, flush=True)
+    if stdout_lines:
+        print("FAILED_STDOUT_TAIL_BEGIN", flush=True)
+        for line in stdout_lines:
+            print(line, flush=True)
+        print("FAILED_STDOUT_TAIL_END", flush=True)
 
 
 def selected_environment(env: Dict[str, str]) -> Dict[str, Optional[str]]:
