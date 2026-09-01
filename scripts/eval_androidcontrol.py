@@ -33,6 +33,7 @@ from cache_inference import (
     PAGE_CACHE_SIMILARITIES,
     PageCacheConfig,
     PageLevelCache,
+    parse_normalized_bboxes,
 )
 
 
@@ -213,20 +214,45 @@ def summarize_cache_metrics(details: List[Dict[str, Any]]) -> Dict[str, Any]:
         for record in records
         if record.get("similarity_dhash_hamming") is not None
     ]
+    changed_area_ratios = [
+        float(record["changed_bbox_area_ratio"])
+        for record in records
+        if record.get("changed_bbox_area_ratio") is not None
+    ]
+    changed_tile_counts = [
+        int(record["changed_tile_count"])
+        for record in records
+        if record.get("changed_tile_count") is not None
+    ]
     return {
         "mode": str(records[-1].get("mode") or "off"),
         "num_records": count,
         "page_cache_hit_rate": sum(1 for record in records if record.get("page_cache_hit")) / count,
         "processor_cache_hit_rate": sum(1 for record in records if record.get("processor_cache_hit")) / count,
+        "patch_candidate_rate": sum(1 for record in records if record.get("patch_candidate")) / count,
+        "patch_candidate_allowed_rate": sum(
+            1 for record in records if record.get("patch_candidate_allowed")
+        ) / count,
         "page_cache_hit_types": {
             hit_type: sum(1 for value in hit_types if value == hit_type)
             for hit_type in sorted(set(hit_types))
         },
         "avg_tile_unchanged_ratio": statistics.fmean(tile_ratios) if tile_ratios else None,
         "avg_similarity_dhash_hamming": statistics.fmean(dhash_values) if dhash_values else None,
+        "avg_changed_tile_count": statistics.fmean(changed_tile_counts) if changed_tile_counts else None,
+        "avg_changed_bbox_area_ratio": statistics.fmean(changed_area_ratios) if changed_area_ratios else None,
+        "patch_risk_reasons": summarize_patch_risks(records),
         "cache_evictions": int(records[-1].get("cache_evictions") or 0),
         "cache_entries": int(records[-1].get("cache_entries") or 0),
     }
+
+
+def summarize_patch_risks(records: List[Dict[str, Any]]) -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for record in records:
+        for reason in record.get("patch_risk_reasons") or []:
+            counts[str(reason)] = counts.get(str(reason), 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def resolved_image_path(sample: Dict[str, Any], data_dir: Path) -> Path:
@@ -385,6 +411,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--page_cache_near_dhash_threshold", type=int, default=4)
     parser.add_argument("--page_cache_near_tile_threshold", type=float, default=0.98)
     parser.add_argument("--page_cache_patch_tile_threshold", type=float, default=0.90)
+    parser.add_argument("--page_cache_patch_max_changed_area_ratio", type=float, default=0.25)
+    parser.add_argument(
+        "--page_cache_patch_critical_region",
+        action="append",
+        default=[],
+        help="Normalized bbox left,top,right,bottom that makes patch candidates risky; may be repeated",
+    )
     parser.add_argument("--page_cache_tile_rows", type=int, default=8)
     parser.add_argument("--page_cache_tile_cols", type=int, default=16)
     parser.add_argument("--page_cache_ignored_top_ratio", type=float, default=0.0)
@@ -485,6 +518,8 @@ def make_page_cache(args: argparse.Namespace) -> Optional[PageLevelCache]:
             near_dhash_threshold=args.page_cache_near_dhash_threshold,
             near_tile_threshold=args.page_cache_near_tile_threshold,
             patch_tile_threshold=args.page_cache_patch_tile_threshold,
+            patch_max_changed_area_ratio=args.page_cache_patch_max_changed_area_ratio,
+            patch_critical_regions=parse_normalized_bboxes(args.page_cache_patch_critical_region),
             tile_rows=args.page_cache_tile_rows,
             tile_cols=args.page_cache_tile_cols,
             ignored_top_ratio=args.page_cache_ignored_top_ratio,

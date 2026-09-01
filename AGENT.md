@@ -172,6 +172,107 @@ max_pixels=512 * 28 * 28 = 401408
 
 注意：当前 profiling 尚未把 `generate_seconds` 内部细分成 prefill、TTFT 和逐 token decode，因此无法直接判断模型内部输入端 prefill 与输出端 decode 的精确占比。已有结果显示 `generate_seconds` 仍占 95% 左右，是主要耗时。
 
+## Page-level cache baseline 状态
+
+2026-08-31 已实现第一版 Page-level baseline，目标是先做页面重复/相似度观测和 exact processor-input cache，不涉及训练，不实现 semantic cache，也不实现 full-prefix KV cache。
+
+新增/修改的核心文件：
+
+- `test_framework/cache_fingerprint.py`：截图 `sha256`、`dhash64`、tile hash、changed bbox、tile unchanged ratio。
+- `test_framework/cache_store.py`：轻量内存 LRU。
+- `test_framework/cache_inference.py`：`PageCacheConfig`、`PageLevelCache`、`observe` / `inputs` 模式。
+- `scripts/analyze_page_cache_potential.py`：无模型页面缓存潜力分析脚本。
+- `test_framework/hf_gui_baseline.py`：单样本 `infer_one()` / `profile_infer_one()` 可选接入 page cache；默认关闭。
+- `scripts/eval_androidcontrol.py`、`scripts/profile_androidcontrol.py`、`scripts/profile_single_image.py`：新增 `--page_cache_mode off|observe|inputs` 等参数，并在输出 JSON 中记录 cache 指标。
+- `scripts/run_accel_experiments.py`：新增 cache 模块到 py_compile 清单。
+
+当前支持的 cache 字段包括：
+
+- `page_cache_hit_type`: `miss` / `exact` / `near` / `patch_candidate`
+- `page_cache_hit`
+- `processor_cache_hit`
+- `similarity_dhash_hamming`
+- `tile_unchanged_ratio`
+- `changed_tile_count`
+- `changed_bbox`
+- `changed_bbox_area_ratio`
+- `cache_lookup_seconds`
+- `cache_write_seconds`
+- `cache_entries`
+- `cache_evictions`
+
+当前限制：
+
+- Page cache baseline 只支持 `batch_size=1`；脚本中如果 `--page_cache_mode != off` 且 `--batch_size > 1` 会直接退出。
+- `observe` 只记录 exact/near/patch candidate，不复用输入，不改变推理结果。
+- `inputs` 只在完整 `chat_text + image_sha256 + visual_token_mode + min/max_pixels + model/device/dtype/attn identity` 一致时复用 processor outputs。
+- 目前没有 TTFT、prefill、逐 token decode profiling；`profile_androidcontrol.py` 仍只把 `model.generate()` 整体计为 `generate_seconds`。
+- 本地 Windows 没有模型/GPU，已做的验证仅包括 `py_compile`、脚本 `--help`、单张本地图片 fingerprint/cache sanity check。
+
+建议远端先运行：
+
+```bash
+python scripts/analyze_page_cache_potential.py \
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/cache_analysis/page_potential.json
+```
+
+然后在 GPU 4,5 上跑 observe 和 inputs：
+
+```bash
+OUT_DIR=results/cache_baseline/C00_observe
+mkdir -p "${OUT_DIR}"
+CUDA_VISIBLE_DEVICES=4,5 python scripts/eval_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/eval.json" \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce \
+  --page_cache_mode observe
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/profile.json" \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce \
+  --page_cache_mode observe
+```
+
+```bash
+OUT_DIR=results/cache_baseline/C01_inputs
+mkdir -p "${OUT_DIR}"
+CUDA_VISIBLE_DEVICES=4,5 python scripts/eval_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/eval.json" \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce \
+  --page_cache_mode inputs
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output "${OUT_DIR}/profile.json" \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce \
+  --page_cache_mode inputs
+```
+
+## 下一步 profiling 交接
+
+用户计划在新对话窗口完善 profiling。新的窗口应优先补 HF 本地推理路径中的 `prefill_seconds`、`ttft_seconds` 和逐 token decode 指标，以便判断 page-level / prefix cache 是否真的命中 `generate_seconds` 内部瓶颈。
+
+推荐实现方式：
+
+- 不要替换默认 `model.generate()` 路径；新增可选 profiling wrapper，例如 `--generation_profile_mode generate|manual_greedy`，默认仍为 `generate`。
+- 手动 greedy decode 路径只用于 profiling/实验，保持 `do_sample=False`、`max_new_tokens=48`、同样 `pad/eos` 设置。
+- 先做单图 `profile_single_image.py` 的 repeat 验证，再接 `profile_androidcontrol.py --limit 5`，最后才做完整 eval。
+- 重点确认 manual greedy 输出与 `model.generate()` 的 raw response 或 canonical action 一致，否则不要用它比较 latency。
+- 如果继续做 full-prefix KV cache，应先基于 exact same prefix 的单图重复输入验证 `past_key_values`、position ids/cache position 和 decode trimming；不要对 near/patch 页面做 KV 复用。
+
 ## 远端常用命令
 
 准备 AndroidControl mini：

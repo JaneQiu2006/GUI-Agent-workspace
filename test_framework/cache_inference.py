@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 from pathlib import Path
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 from cache_fingerprint import (
     PageFingerprint,
@@ -30,6 +30,8 @@ class PageCacheConfig:
     max_entries: int = 128
     near_dhash_threshold: int = 4
     patch_tile_threshold: float = 0.90
+    patch_max_changed_area_ratio: float = 0.25
+    patch_critical_regions: Tuple[Tuple[float, float, float, float], ...] = ()
     near_tile_threshold: float = 0.98
     tile_rows: int = 8
     tile_cols: int = 16
@@ -44,6 +46,11 @@ class PageCacheConfig:
             raise ValueError(f"Unsupported page cache scope: {self.scope}")
         if self.similarity not in PAGE_CACHE_SIMILARITIES:
             raise ValueError(f"Unsupported page cache similarity: {self.similarity}")
+        if not 0.0 <= self.patch_max_changed_area_ratio <= 1.0:
+            raise ValueError("page cache patch_max_changed_area_ratio must be in [0, 1]")
+        self.patch_critical_regions = tuple(
+            _normalize_bbox(region) for region in self.patch_critical_regions
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -59,8 +66,13 @@ class PageCacheProbe:
     tile_unchanged_ratio: Optional[float]
     changed_tile_count: int
     changed_bbox: Optional[Any]
+    changed_bbox_pixels: Optional[Any]
     changed_bbox_area_ratio: float
     cache_lookup_seconds: float
+    patch_candidate: bool = False
+    patch_candidate_allowed: bool = False
+    patch_risk_reasons: Tuple[str, ...] = ()
+    patch_diff: Optional[Dict[str, Any]] = None
     cache_write_seconds: float = 0.0
     cache_entries: int = 0
     cache_evictions: int = 0
@@ -72,6 +84,8 @@ class PageCacheProbe:
         data = asdict(self)
         if self.changed_bbox is not None and not isinstance(self.changed_bbox, list):
             data["changed_bbox"] = list(self.changed_bbox)
+        if self.changed_bbox_pixels is not None and not isinstance(self.changed_bbox_pixels, list):
+            data["changed_bbox_pixels"] = list(self.changed_bbox_pixels)
         return data
 
 
@@ -105,12 +119,13 @@ class PageLevelCache:
             ignored_top_ratio=self.config.ignored_top_ratio,
             ignored_bottom_ratio=self.config.ignored_bottom_ratio,
         )
-        hit_type, similarity = self._best_page_match(fingerprint, trajectory_text)
+        hit_type, similarity, base_record = self._best_page_match(fingerprint, trajectory_text)
         lookup_seconds = time.perf_counter() - started
         probe = self._probe_from_match(
             fingerprint=fingerprint,
             hit_type=hit_type,
             similarity=similarity,
+            base_record=base_record,
             lookup_seconds=lookup_seconds,
             processor_cache_hit=False,
         )
@@ -185,12 +200,13 @@ class PageLevelCache:
         self,
         fingerprint: PageFingerprint,
         trajectory_id: Optional[str],
-    ) -> tuple[str, Optional[PageSimilarity]]:
+    ) -> tuple[str, Optional[PageSimilarity], Optional[_PageRecord]]:
         exact_record = self._pages.get(fingerprint.image_sha256)
         if exact_record is not None and self._record_in_scope(exact_record, trajectory_id):
-            return "exact", compare_page_fingerprints(fingerprint, exact_record.fingerprint)
+            return "exact", compare_page_fingerprints(fingerprint, exact_record.fingerprint), exact_record
 
         best_similarity: Optional[PageSimilarity] = None
+        best_record: Optional[_PageRecord] = None
         best_score = (-1.0, -10_000.0)
         for _, record in self._pages.items():
             if not self._record_in_scope(record, trajectory_id):
@@ -202,13 +218,14 @@ class PageLevelCache:
             if score > best_score:
                 best_score = score
                 best_similarity = similarity
+                best_record = record
         if best_similarity is None:
-            return "miss", None
+            return "miss", None, None
         if self._near_hit(best_similarity):
-            return "near", best_similarity
+            return "near", best_similarity, best_record
         if self._patch_candidate(best_similarity):
-            return "patch_candidate", best_similarity
-        return "miss", best_similarity
+            return "patch_candidate", best_similarity, best_record
+        return "miss", best_similarity, best_record
 
     def _record_in_scope(self, record: _PageRecord, trajectory_id: Optional[str]) -> bool:
         if self.config.scope != "trajectory":
@@ -233,19 +250,48 @@ class PageLevelCache:
     def _patch_candidate(self, similarity: PageSimilarity) -> bool:
         if self.config.similarity not in {"tile", "dhash"}:
             return False
+        if similarity.exact or similarity.changed_tile_count <= 0:
+            return False
+        if self._patch_risk_reasons(similarity):
+            return False
         return (
             similarity.tile_unchanged_ratio is not None
             and similarity.tile_unchanged_ratio >= self.config.patch_tile_threshold
         )
+
+    def _raw_patch_candidate(self, similarity: PageSimilarity) -> bool:
+        return (
+            self.config.similarity in {"tile", "dhash"}
+            and not similarity.exact
+            and similarity.changed_tile_count > 0
+            and similarity.tile_unchanged_ratio is not None
+            and similarity.tile_unchanged_ratio >= self.config.patch_tile_threshold
+        )
+
+    def _patch_risk_reasons(self, similarity: PageSimilarity) -> Tuple[str, ...]:
+        reasons = []
+        if similarity.changed_bbox_area_ratio > self.config.patch_max_changed_area_ratio:
+            reasons.append("changed_bbox_area_too_large")
+        changed_bbox = similarity.changed_bbox
+        if changed_bbox is not None:
+            for region in self.config.patch_critical_regions:
+                if _bbox_intersects(changed_bbox, region):
+                    reasons.append("critical_region_overlap")
+                    break
+        return tuple(reasons)
 
     def _probe_from_match(
         self,
         fingerprint: PageFingerprint,
         hit_type: str,
         similarity: Optional[PageSimilarity],
+        base_record: Optional[_PageRecord],
         lookup_seconds: float,
         processor_cache_hit: bool,
     ) -> PageCacheProbe:
+        patch_candidate = self._raw_patch_candidate(similarity) if similarity else False
+        patch_risk_reasons = self._patch_risk_reasons(similarity) if similarity else ()
+        patch_candidate_allowed = patch_candidate and not patch_risk_reasons
         probe = PageCacheProbe(
             mode=self.config.mode,
             page_cache_hit_type=hit_type,
@@ -255,12 +301,52 @@ class PageLevelCache:
             tile_unchanged_ratio=similarity.tile_unchanged_ratio if similarity else None,
             changed_tile_count=similarity.changed_tile_count if similarity else 0,
             changed_bbox=similarity.changed_bbox if similarity else None,
+            changed_bbox_pixels=similarity.changed_bbox_pixels if similarity else None,
             changed_bbox_area_ratio=similarity.changed_bbox_area_ratio if similarity else 0.0,
+            patch_candidate=patch_candidate,
+            patch_candidate_allowed=patch_candidate_allowed,
+            patch_risk_reasons=patch_risk_reasons,
+            patch_diff=self._patch_diff_dict(fingerprint, similarity, base_record),
             cache_lookup_seconds=lookup_seconds,
             image_sha256=fingerprint.image_sha256,
         )
         self._fill_counts(probe)
         return probe
+
+    def _patch_diff_dict(
+        self,
+        fingerprint: PageFingerprint,
+        similarity: Optional[PageSimilarity],
+        base_record: Optional[_PageRecord],
+    ) -> Optional[Dict[str, Any]]:
+        if (
+            similarity is None
+            or similarity.exact
+            or similarity.changed_tile_count <= 0
+            or similarity.tile_unchanged_ratio is None
+        ):
+            return None
+        return {
+            "base_image_sha256": base_record.fingerprint.image_sha256 if base_record else None,
+            "current_image_sha256": fingerprint.image_sha256,
+            "tile_rows": fingerprint.tile_rows,
+            "tile_cols": fingerprint.tile_cols,
+            "total_tile_count": similarity.total_tile_count,
+            "unchanged_tile_count": similarity.unchanged_tile_count,
+            "changed_tile_count": similarity.changed_tile_count,
+            "tile_unchanged_ratio": similarity.tile_unchanged_ratio,
+            "changed_tile_indices": list(similarity.changed_tile_indices),
+            "unchanged_tile_indices": list(similarity.unchanged_tile_indices),
+            "changed_tile_mask": list(similarity.changed_tile_mask),
+            "stable_tile_hashes": [
+                {"index": index, "hash": value}
+                for index, value in similarity.stable_tile_hashes
+            ],
+            "changed_bbox": list(similarity.changed_bbox) if similarity.changed_bbox else None,
+            "changed_bbox_pixels": list(similarity.changed_bbox_pixels) if similarity.changed_bbox_pixels else None,
+            "changed_bbox_area_ratio": similarity.changed_bbox_area_ratio,
+            "dhash_hamming": similarity.dhash_hamming,
+        }
 
     def _fill_counts(self, probe: PageCacheProbe) -> None:
         probe.page_cache_entries = len(self._pages)
@@ -291,3 +377,37 @@ class PageLevelCache:
                 return inputs.__class__(data)
             except TypeError:
                 return data
+
+
+def parse_normalized_bboxes(values: Iterable[str]) -> Tuple[Tuple[float, float, float, float], ...]:
+    return tuple(_normalize_bbox(_parse_bbox_text(value)) for value in values)
+
+
+def _parse_bbox_text(value: str) -> Tuple[float, float, float, float]:
+    parts = [part.strip() for part in str(value).split(",")]
+    if len(parts) != 4:
+        raise ValueError(f"Expected bbox as left,top,right,bottom, got: {value}")
+    return tuple(float(part) for part in parts)  # type: ignore[return-value]
+
+
+def _normalize_bbox(region: Tuple[float, float, float, float]) -> Tuple[float, float, float, float]:
+    left, top, right, bottom = region
+    left = max(0.0, min(1.0, float(left)))
+    top = max(0.0, min(1.0, float(top)))
+    right = max(0.0, min(1.0, float(right)))
+    bottom = max(0.0, min(1.0, float(bottom)))
+    return (
+        min(left, right),
+        min(top, bottom),
+        max(left, right),
+        max(top, bottom),
+    )
+
+
+def _bbox_intersects(
+    left_bbox: Tuple[float, float, float, float],
+    right_bbox: Tuple[float, float, float, float],
+) -> bool:
+    left_a, top_a, right_a, bottom_a = left_bbox
+    left_b, top_b, right_b, bottom_b = right_bbox
+    return max(left_a, left_b) < min(right_a, right_b) and max(top_a, top_b) < min(bottom_a, bottom_b)

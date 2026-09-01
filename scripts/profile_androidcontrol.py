@@ -28,6 +28,7 @@ from eval_androidcontrol import (
 )
 from hf_gui_baseline import (
     DEFAULT_MODEL_PATH,
+    GENERATION_PROFILE_MODES,
     VISION_TOKEN_MODES,
     gpu_memory_snapshot,
     load_model_and_processor,
@@ -42,6 +43,7 @@ from cache_inference import (
     PAGE_CACHE_SIMILARITIES,
     PageCacheConfig,
     PageLevelCache,
+    parse_normalized_bboxes,
 )
 
 
@@ -89,6 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min_pixels", type=int)
     parser.add_argument("--max_pixels", type=int)
     parser.add_argument("--point_tolerance", type=float, default=100.0)
+    parser.add_argument("--generation_profile_mode", default="generate", choices=GENERATION_PROFILE_MODES)
     parser.add_argument("--page_cache_mode", default="off", choices=PAGE_CACHE_MODES)
     parser.add_argument("--page_cache_scope", default="trajectory", choices=PAGE_CACHE_SCOPES)
     parser.add_argument("--page_cache_similarity", default="tile", choices=PAGE_CACHE_SIMILARITIES)
@@ -96,6 +99,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--page_cache_near_dhash_threshold", type=int, default=4)
     parser.add_argument("--page_cache_near_tile_threshold", type=float, default=0.98)
     parser.add_argument("--page_cache_patch_tile_threshold", type=float, default=0.90)
+    parser.add_argument("--page_cache_patch_max_changed_area_ratio", type=float, default=0.25)
+    parser.add_argument(
+        "--page_cache_patch_critical_region",
+        action="append",
+        default=[],
+        help="Normalized bbox left,top,right,bottom that makes patch candidates risky; may be repeated",
+    )
     parser.add_argument("--page_cache_tile_rows", type=int, default=8)
     parser.add_argument("--page_cache_tile_cols", type=int, default=16)
     parser.add_argument("--page_cache_ignored_top_ratio", type=float, default=0.0)
@@ -112,6 +122,8 @@ def main() -> int:
         raise SystemExit("No AndroidControl samples found")
     if args.page_cache_mode != "off" and args.batch_size != 1:
         raise SystemExit("Page-level cache baseline currently supports batch_size=1 only")
+    if args.generation_profile_mode == "manual_greedy" and args.batch_size != 1:
+        raise SystemExit("manual_greedy generation profiling currently supports batch_size=1 only")
     data_dir = args.data_dir or args.test_json.parent
     page_cache = make_page_cache(args)
 
@@ -144,6 +156,7 @@ def main() -> int:
                 action_hint=str(chunk[0].get("action", "")),
                 page_cache=page_cache,
                 cache_trajectory_id=chunk[0].get("episode_id"),
+                generation_profile_mode=args.generation_profile_mode,
             )
         else:
             profile_infer_batch(
@@ -187,6 +200,7 @@ def main() -> int:
                     action_hint=str(chunk[0].get("action", "")),
                     page_cache=page_cache,
                     cache_trajectory_id=chunk[0].get("episode_id"),
+                    generation_profile_mode=args.generation_profile_mode,
                 )
             ]
         else:
@@ -217,6 +231,7 @@ def main() -> int:
             )
             detail["timings"] = result.timings
             detail["memory"] = result.memory
+            detail["generation_profile"] = result.generation_profile
             detail["effective_batch_size"] = len(chunk)
             details.append(detail)
             print(
@@ -256,6 +271,7 @@ def main() -> int:
             "min_pixels": args.min_pixels,
             "max_pixels": args.max_pixels,
             "point_tolerance": args.point_tolerance,
+            "generation_profile_mode": args.generation_profile_mode,
             "page_cache": page_cache.config.to_dict() if page_cache else {"mode": "off"},
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
@@ -295,6 +311,8 @@ def make_page_cache(args: argparse.Namespace) -> PageLevelCache | None:
             near_dhash_threshold=args.page_cache_near_dhash_threshold,
             near_tile_threshold=args.page_cache_near_tile_threshold,
             patch_tile_threshold=args.page_cache_patch_tile_threshold,
+            patch_max_changed_area_ratio=args.page_cache_patch_max_changed_area_ratio,
+            patch_critical_regions=parse_normalized_bboxes(args.page_cache_patch_critical_region),
             tile_rows=args.page_cache_tile_rows,
             tile_cols=args.page_cache_tile_cols,
             ignored_top_ratio=args.page_cache_ignored_top_ratio,

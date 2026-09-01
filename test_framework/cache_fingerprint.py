@@ -31,14 +31,23 @@ class PageSimilarity:
     exact: bool
     dhash_hamming: Optional[int]
     tile_unchanged_ratio: Optional[float]
+    total_tile_count: int
+    unchanged_tile_count: int
     changed_tile_count: int
+    changed_tile_indices: Tuple[int, ...]
+    unchanged_tile_indices: Tuple[int, ...]
+    changed_tile_mask: Tuple[bool, ...]
+    stable_tile_hashes: Tuple[Tuple[int, str], ...]
     changed_bbox: Optional[Tuple[float, float, float, float]]
+    changed_bbox_pixels: Optional[Tuple[int, int, int, int]]
     changed_bbox_area_ratio: float
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
         if self.changed_bbox is not None:
             data["changed_bbox"] = list(self.changed_bbox)
+        if self.changed_bbox_pixels is not None:
+            data["changed_bbox_pixels"] = list(self.changed_bbox_pixels)
         return data
 
 
@@ -82,22 +91,51 @@ def compare_page_fingerprints(
     changed_bbox: Optional[Tuple[float, float, float, float]] = None
     area_ratio = 0.0
     if _compatible_tiles(current, cached):
-        changed = [
+        changed = tuple(
             index
             for index, (left, right) in enumerate(zip(current.tile_hashes, cached.tile_hashes))
             if left != right
-        ]
+        )
+        unchanged = tuple(
+            index
+            for index, (left, right) in enumerate(zip(current.tile_hashes, cached.tile_hashes))
+            if left == right
+        )
         changed_count = len(changed)
         total = max(1, len(current.tile_hashes))
         tile_ratio = (total - changed_count) / total
-        changed_bbox = _changed_tile_bbox(changed, current.tile_rows, current.tile_cols)
+        active_bbox = _changed_tile_bbox(changed, current.tile_rows, current.tile_cols)
+        changed_bbox = _map_active_bbox_to_image(
+            active_bbox,
+            current.ignored_top_ratio,
+            current.ignored_bottom_ratio,
+        )
+        changed_bbox_pixels = _bbox_pixels(changed_bbox, current.width, current.height)
         area_ratio = _bbox_area(changed_bbox)
+        changed_tile_indices = changed
+        unchanged_tile_indices = unchanged
+        changed_set = set(changed)
+        changed_tile_mask = tuple(index in changed_set for index in range(len(current.tile_hashes)))
+        stable_tile_hashes = tuple((index, current.tile_hashes[index]) for index in unchanged)
+    else:
+        changed_tile_indices = ()
+        unchanged_tile_indices = ()
+        changed_tile_mask = ()
+        stable_tile_hashes = ()
+        changed_bbox_pixels = None
     return PageSimilarity(
         exact=exact,
         dhash_hamming=dhash_hamming,
         tile_unchanged_ratio=tile_ratio,
+        total_tile_count=len(current.tile_hashes) if _compatible_tiles(current, cached) else 0,
+        unchanged_tile_count=len(unchanged_tile_indices),
         changed_tile_count=changed_count,
+        changed_tile_indices=changed_tile_indices,
+        unchanged_tile_indices=unchanged_tile_indices,
+        changed_tile_mask=changed_tile_mask,
+        stable_tile_hashes=stable_tile_hashes,
         changed_bbox=changed_bbox,
+        changed_bbox_pixels=changed_bbox_pixels,
         changed_bbox_area_ratio=area_ratio,
     )
 
@@ -151,9 +189,13 @@ def _tile_hashes(image: Any, rows: int, cols: int) -> List[str]:
 
 def _compatible_tiles(left: PageFingerprint, right: PageFingerprint) -> bool:
     return (
-        left.tile_rows == right.tile_rows
+        left.width == right.width
+        and left.height == right.height
+        and left.tile_rows == right.tile_rows
         and left.tile_cols == right.tile_cols
         and len(left.tile_hashes) == len(right.tile_hashes)
+        and left.ignored_top_ratio == right.ignored_top_ratio
+        and left.ignored_bottom_ratio == right.ignored_bottom_ratio
     )
 
 
@@ -178,3 +220,38 @@ def _bbox_area(bbox: Optional[Tuple[float, float, float, float]]) -> float:
         return 0.0
     left, top, right, bottom = bbox
     return max(0.0, right - left) * max(0.0, bottom - top)
+
+
+def _map_active_bbox_to_image(
+    bbox: Optional[Tuple[float, float, float, float]],
+    ignored_top_ratio: float,
+    ignored_bottom_ratio: float,
+) -> Optional[Tuple[float, float, float, float]]:
+    if bbox is None:
+        return None
+    left, top, right, bottom = bbox
+    active_top = max(0.0, min(0.5, ignored_top_ratio))
+    active_bottom = 1.0 - max(0.0, min(0.5, ignored_bottom_ratio))
+    active_height = max(0.0, active_bottom - active_top)
+    return (
+        left,
+        active_top + top * active_height,
+        right,
+        active_top + bottom * active_height,
+    )
+
+
+def _bbox_pixels(
+    bbox: Optional[Tuple[float, float, float, float]],
+    width: int,
+    height: int,
+) -> Optional[Tuple[int, int, int, int]]:
+    if bbox is None:
+        return None
+    left, top, right, bottom = bbox
+    return (
+        int(round(left * width)),
+        int(round(top * height)),
+        int(round(right * width)),
+        int(round(bottom * height)),
+    )

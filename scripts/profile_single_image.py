@@ -17,6 +17,7 @@ if str(TEST_FRAMEWORK) not in sys.path:
 
 from hf_gui_baseline import (
     DEFAULT_MODEL_PATH,
+    GENERATION_PROFILE_MODES,
     VISION_TOKEN_MODES,
     gpu_memory_snapshot,
     load_model_and_processor,
@@ -29,6 +30,7 @@ from cache_inference import (
     PAGE_CACHE_SIMILARITIES,
     PageCacheConfig,
     PageLevelCache,
+    parse_normalized_bboxes,
 )
 
 
@@ -59,18 +61,43 @@ def summarize_cache_runs(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {"mode": "off", "num_records": 0}
     count = len(records)
     hit_types = [str(record.get("page_cache_hit_type") or "miss") for record in records]
+    changed_area_ratios = [
+        float(record["changed_bbox_area_ratio"])
+        for record in records
+        if record.get("changed_bbox_area_ratio") is not None
+    ]
+    changed_tile_counts = [
+        int(record["changed_tile_count"])
+        for record in records
+        if record.get("changed_tile_count") is not None
+    ]
     return {
         "mode": str(records[-1].get("mode") or "off"),
         "num_records": count,
         "page_cache_hit_rate": sum(1 for record in records if record.get("page_cache_hit")) / count,
         "processor_cache_hit_rate": sum(1 for record in records if record.get("processor_cache_hit")) / count,
+        "patch_candidate_rate": sum(1 for record in records if record.get("patch_candidate")) / count,
+        "patch_candidate_allowed_rate": sum(
+            1 for record in records if record.get("patch_candidate_allowed")
+        ) / count,
         "page_cache_hit_types": {
             hit_type: sum(1 for value in hit_types if value == hit_type)
             for hit_type in sorted(set(hit_types))
         },
+        "avg_changed_tile_count": statistics.fmean(changed_tile_counts) if changed_tile_counts else None,
+        "avg_changed_bbox_area_ratio": statistics.fmean(changed_area_ratios) if changed_area_ratios else None,
+        "patch_risk_reasons": summarize_patch_risks(records),
         "cache_evictions": int(records[-1].get("cache_evictions") or 0),
         "cache_entries": int(records[-1].get("cache_entries") or 0),
     }
+
+
+def summarize_patch_risks(records: List[Dict[str, Any]]) -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for record in records:
+        for reason in record.get("patch_risk_reasons") or []:
+            counts[str(reason)] = counts.get(str(reason), 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -90,6 +117,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min_pixels", type=int)
     parser.add_argument("--max_pixels", type=int)
     parser.add_argument("--action_hint", help="Optional action hint for dynamic visual token modes")
+    parser.add_argument("--generation_profile_mode", default="generate", choices=GENERATION_PROFILE_MODES)
     parser.add_argument("--page_cache_mode", default="off", choices=PAGE_CACHE_MODES)
     parser.add_argument("--page_cache_scope", default="session", choices=PAGE_CACHE_SCOPES)
     parser.add_argument("--page_cache_similarity", default="tile", choices=PAGE_CACHE_SIMILARITIES)
@@ -97,6 +125,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--page_cache_near_dhash_threshold", type=int, default=4)
     parser.add_argument("--page_cache_near_tile_threshold", type=float, default=0.98)
     parser.add_argument("--page_cache_patch_tile_threshold", type=float, default=0.90)
+    parser.add_argument("--page_cache_patch_max_changed_area_ratio", type=float, default=0.25)
+    parser.add_argument(
+        "--page_cache_patch_critical_region",
+        action="append",
+        default=[],
+        help="Normalized bbox left,top,right,bottom that makes patch candidates risky; may be repeated",
+    )
     parser.add_argument("--page_cache_tile_rows", type=int, default=8)
     parser.add_argument("--page_cache_tile_cols", type=int, default=16)
     parser.add_argument("--page_cache_ignored_top_ratio", type=float, default=0.0)
@@ -135,6 +170,7 @@ def main() -> int:
             action_hint=args.action_hint,
             page_cache=page_cache,
             cache_trajectory_id="single_image",
+            generation_profile_mode=args.generation_profile_mode,
         )
 
     if page_cache is not None:
@@ -159,6 +195,7 @@ def main() -> int:
             action_hint=args.action_hint,
             page_cache=page_cache,
             cache_trajectory_id="single_image",
+            generation_profile_mode=args.generation_profile_mode,
         )
         runs.append(
             {
@@ -172,6 +209,7 @@ def main() -> int:
                 "timings": result.timings,
                 "memory": result.memory,
                 "cache": result.cache,
+                "generation_profile": result.generation_profile,
             }
         )
 
@@ -191,6 +229,7 @@ def main() -> int:
             "min_pixels": args.min_pixels,
             "max_pixels": args.max_pixels,
             "action_hint": args.action_hint,
+            "generation_profile_mode": args.generation_profile_mode,
             "page_cache": page_cache.config.to_dict() if page_cache else {"mode": "off"},
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
@@ -230,6 +269,8 @@ def make_page_cache(args: argparse.Namespace) -> PageLevelCache | None:
             near_dhash_threshold=args.page_cache_near_dhash_threshold,
             near_tile_threshold=args.page_cache_near_tile_threshold,
             patch_tile_threshold=args.page_cache_patch_tile_threshold,
+            patch_max_changed_area_ratio=args.page_cache_patch_max_changed_area_ratio,
+            patch_critical_regions=parse_normalized_bboxes(args.page_cache_patch_critical_region),
             tile_rows=args.page_cache_tile_rows,
             tile_cols=args.page_cache_tile_cols,
             ignored_top_ratio=args.page_cache_ignored_top_ratio,

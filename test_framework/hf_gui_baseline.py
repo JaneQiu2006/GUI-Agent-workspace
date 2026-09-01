@@ -8,8 +8,10 @@ profiling or acceleration code can be inserted later.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+import statistics
 import time
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -27,6 +29,7 @@ VISION_TOKEN_MODES: Dict[str, Dict[str, int]] = {
     "dynamic_aggressive": {},
 }
 STATIC_VISION_TOKEN_MODES = {"default", "mild_reduce", "aggressive_reduce"}
+GENERATION_PROFILE_MODES = ("generate", "manual_greedy")
 InferItem = Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any], Optional[str]]
 
 
@@ -48,6 +51,7 @@ class GuiInferenceResult:
 class GuiProfiledInferenceResult(GuiInferenceResult):
     timings: Dict[str, float]
     memory: Dict[str, Any]
+    generation_profile: Optional[Dict[str, Any]] = None
 
 
 def build_gui_messages(
@@ -522,6 +526,7 @@ def profile_infer_one(
     action_hint: Optional[str] = None,
     page_cache: Optional[PageLevelCache] = None,
     cache_trajectory_id: Optional[Any] = None,
+    generation_profile_mode: str = "generate",
 ) -> GuiProfiledInferenceResult:
     import torch
 
@@ -607,16 +612,31 @@ def profile_infer_one(
     _sync_if_cuda(torch, target_device)
     timings["input_to_device_seconds"] = time.perf_counter() - stage_started
 
-    stage_started = time.perf_counter()
-    with torch.inference_mode():
-        generated_ids = model.generate(
-            **inputs,
+    if generation_profile_mode not in GENERATION_PROFILE_MODES:
+        raise ValueError(f"Unsupported generation_profile_mode: {generation_profile_mode}")
+
+    if generation_profile_mode == "manual_greedy":
+        generated_ids, generation_profile = manual_greedy_generate(
+            model,
+            processor,
+            inputs,
             max_new_tokens=max_new_tokens,
-            do_sample=False,
-            **_generation_token_kwargs(processor),
+            torch=torch,
+            target_device=target_device,
         )
-    _sync_if_cuda(torch, target_device)
-    timings["generate_seconds"] = time.perf_counter() - stage_started
+        timings.update(_manual_generation_timings(generation_profile))
+    else:
+        stage_started = time.perf_counter()
+        with torch.inference_mode():
+            generated_ids = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                **_generation_token_kwargs(processor),
+            )
+        _sync_if_cuda(torch, target_device)
+        timings["generate_seconds"] = time.perf_counter() - stage_started
+        generation_profile = {"mode": "generate"}
 
     stage_started = time.perf_counter()
     generated_ids_trimmed = [
@@ -646,6 +666,7 @@ def profile_infer_one(
         cache=cache_record,
         timings=timings,
         memory=gpu_memory_snapshot(),
+        generation_profile=generation_profile,
     )
 
 
@@ -927,6 +948,234 @@ def _unpack_infer_item(item: Tuple[Any, ...]) -> InferItem:
 
 def _processor_tokenizer(processor: Any) -> Optional[Any]:
     return getattr(processor, "tokenizer", processor)
+
+
+def manual_greedy_generate(
+    model: Any,
+    processor: Any,
+    inputs: Any,
+    max_new_tokens: int,
+    torch: Any,
+    target_device: Optional[Any],
+) -> Tuple[Any, Dict[str, Any]]:
+    """Profiling-only greedy decode that exposes prefill and per-token timing."""
+    input_ids = getattr(inputs, "input_ids", None)
+    if input_ids is None:
+        raise ValueError("manual_greedy generation requires inputs.input_ids")
+    if int(input_ids.shape[0]) != 1:
+        raise ValueError("manual_greedy generation currently supports batch_size=1 only")
+    if max_new_tokens <= 0:
+        return input_ids, {
+            "mode": "manual_greedy",
+            "prefill_seconds": 0.0,
+            "ttft_seconds": 0.0,
+            "decode_step_seconds": [],
+            "decode_step_count": 0,
+            "decode_loop_seconds": 0.0,
+            "generate_seconds": 0.0,
+            "stop_reason": "max_new_tokens",
+        }
+
+    input_dict = _as_input_dict(inputs)
+    attention_mask = input_dict.get("attention_mask")
+    generated_tokens = []
+    decode_step_seconds: List[float] = []
+    eos_token_ids = _eos_token_ids(processor)
+    stop_reason = "max_new_tokens"
+
+    _sync_if_cuda(torch, target_device)
+    generate_started = time.perf_counter()
+    prefill_started = generate_started
+    with torch.inference_mode():
+        outputs = _model_forward(
+            model,
+            {
+                **input_dict,
+                "use_cache": True,
+                "return_dict": True,
+            },
+        )
+        _sync_if_cuda(torch, target_device)
+        prefill_seconds = time.perf_counter() - prefill_started
+        next_token = outputs.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+        _sync_if_cuda(torch, target_device)
+        ttft_seconds = time.perf_counter() - generate_started
+        generated_tokens.append(next_token)
+
+        if _is_eos_token(next_token, eos_token_ids):
+            stop_reason = "eos"
+        past_key_values = getattr(outputs, "past_key_values", None)
+        if past_key_values is None and max_new_tokens > 1 and stop_reason != "eos":
+            raise RuntimeError("manual_greedy generation requires model forward to return past_key_values")
+        cache_position = _initial_cache_position(input_ids, next_token, torch)
+        attention_mask = _append_attention_mask(attention_mask, next_token, torch)
+
+        while len(generated_tokens) < max_new_tokens and stop_reason != "eos":
+            step_started = time.perf_counter()
+            decode_inputs = _next_token_inputs(
+                model,
+                input_dict,
+                next_token,
+                past_key_values,
+                attention_mask,
+                cache_position,
+            )
+            outputs = _model_forward(model, decode_inputs)
+            next_token = outputs.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+            _sync_if_cuda(torch, target_device)
+            decode_step_seconds.append(time.perf_counter() - step_started)
+            generated_tokens.append(next_token)
+
+            if _is_eos_token(next_token, eos_token_ids):
+                stop_reason = "eos"
+            past_key_values = getattr(outputs, "past_key_values", past_key_values)
+            cache_position = cache_position + 1 if cache_position is not None else None
+            attention_mask = _append_attention_mask(attention_mask, next_token, torch)
+
+    _sync_if_cuda(torch, target_device)
+    generate_seconds = time.perf_counter() - generate_started
+    generated_ids_trimmed = torch.cat(generated_tokens, dim=-1)
+    generated_ids = torch.cat([input_ids, generated_ids_trimmed], dim=-1)
+    return generated_ids, {
+        "mode": "manual_greedy",
+        "prefill_seconds": prefill_seconds,
+        "ttft_seconds": ttft_seconds,
+        "decode_step_seconds": decode_step_seconds,
+        "decode_step_count": len(decode_step_seconds),
+        "decode_loop_seconds": sum(decode_step_seconds),
+        "generate_seconds": generate_seconds,
+        "stop_reason": stop_reason,
+    }
+
+
+def _manual_generation_timings(generation_profile: Dict[str, Any]) -> Dict[str, float]:
+    decode_step_seconds = [
+        float(value)
+        for value in generation_profile.get("decode_step_seconds", [])
+    ]
+    timings = {
+        "generate_seconds": float(generation_profile["generate_seconds"]),
+        "prefill_seconds": float(generation_profile["prefill_seconds"]),
+        "ttft_seconds": float(generation_profile["ttft_seconds"]),
+        "decode_loop_seconds": float(generation_profile["decode_loop_seconds"]),
+        "decode_step_count": float(generation_profile["decode_step_count"]),
+    }
+    if decode_step_seconds:
+        timings.update(
+            {
+                "decode_token_mean_seconds": statistics.fmean(decode_step_seconds),
+                "decode_token_min_seconds": min(decode_step_seconds),
+                "decode_token_max_seconds": max(decode_step_seconds),
+                "decode_token_median_seconds": statistics.median(decode_step_seconds),
+            }
+        )
+    else:
+        timings.update(
+            {
+                "decode_token_mean_seconds": 0.0,
+                "decode_token_min_seconds": 0.0,
+                "decode_token_max_seconds": 0.0,
+                "decode_token_median_seconds": 0.0,
+            }
+        )
+    return timings
+
+
+def _as_input_dict(inputs: Any) -> Dict[str, Any]:
+    if isinstance(inputs, Mapping):
+        return dict(inputs)
+    if hasattr(inputs, "items"):
+        return dict(inputs.items())
+    return {
+        key: value
+        for key, value in vars(inputs).items()
+        if not key.startswith("_") and value is not None
+    }
+
+
+def _eos_token_ids(processor: Any) -> set[int]:
+    eos_token_id = _generation_token_kwargs(processor).get("eos_token_id")
+    if eos_token_id is None:
+        return set()
+    if isinstance(eos_token_id, (list, tuple, set)):
+        return {int(value) for value in eos_token_id}
+    return {int(eos_token_id)}
+
+
+def _is_eos_token(token: Any, eos_token_ids: set[int]) -> bool:
+    if not eos_token_ids:
+        return False
+    return int(token.reshape(-1)[0].item()) in eos_token_ids
+
+
+def _initial_cache_position(input_ids: Any, next_token: Any, torch: Any) -> Any:
+    return torch.arange(
+        int(input_ids.shape[-1]),
+        int(input_ids.shape[-1]) + int(next_token.shape[-1]),
+        device=next_token.device,
+    )
+
+
+def _append_attention_mask(attention_mask: Any, next_token: Any, torch: Any) -> Any:
+    if attention_mask is None:
+        return None
+    ones = torch.ones(
+        (int(attention_mask.shape[0]), int(next_token.shape[-1])),
+        dtype=attention_mask.dtype,
+        device=attention_mask.device,
+    )
+    return torch.cat([attention_mask, ones], dim=-1)
+
+
+def _next_token_inputs(
+    model: Any,
+    base_inputs: Dict[str, Any],
+    next_token: Any,
+    past_key_values: Any,
+    attention_mask: Any,
+    cache_position: Any,
+) -> Dict[str, Any]:
+    model_kwargs = {
+        key: value
+        for key, value in base_inputs.items()
+        if key not in {"input_ids", "inputs_embeds"}
+    }
+    model_kwargs["past_key_values"] = past_key_values
+    model_kwargs["use_cache"] = True
+    if attention_mask is not None:
+        model_kwargs["attention_mask"] = attention_mask
+    if cache_position is not None:
+        model_kwargs["cache_position"] = cache_position
+    if hasattr(model, "prepare_inputs_for_generation"):
+        try:
+            prepared = model.prepare_inputs_for_generation(next_token, **model_kwargs)
+            prepared["use_cache"] = True
+            prepared["return_dict"] = True
+            return prepared
+        except TypeError:
+            pass
+    prepared = {
+        "input_ids": next_token,
+        "past_key_values": past_key_values,
+        "use_cache": True,
+        "return_dict": True,
+    }
+    if attention_mask is not None:
+        prepared["attention_mask"] = attention_mask
+    if cache_position is not None:
+        prepared["cache_position"] = cache_position
+    return prepared
+
+
+def _model_forward(model: Any, kwargs: Dict[str, Any]) -> Any:
+    try:
+        return model(**kwargs)
+    except TypeError:
+        if "cache_position" not in kwargs:
+            raise
+        fallback = dict(kwargs)
+        fallback.pop("cache_position", None)
+        return model(**fallback)
 
 
 def _set_processor_padding_side(processor: Any, padding_side: str) -> Optional[str]:
