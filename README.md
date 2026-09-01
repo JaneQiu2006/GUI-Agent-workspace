@@ -97,6 +97,70 @@ pip install -r requirements-androidcontrol.txt
 For already processed AndroidControl JSON/JSONL files, keep using
 `scripts/prepare_androidcontrol_jsonl.py` and `test_gui_benchmark.py`.
 
+## AndroidWorld Cache Benchmark
+
+This repository also includes a small cache-oriented AndroidWorld adapter. It
+uses AndroidWorld's official task registry, suite creation, and live emulator
+environment, while routing model inference through this project's Qwen GUI
+inference/cache path.
+
+Default subset config:
+
+```bash
+configs/androidworld_cache_subset.json
+```
+
+Environment smoke test:
+
+```bash
+python scripts/run_androidworld_cache_benchmark.py \
+  --android_world_path /path/to/android_world \
+  --run_mode smoke \
+  --output results/androidworld_cache/smoke \
+  --perform_emulator_setup \
+  --limit_episodes 1
+```
+
+Baseline and cache evaluation:
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/run_androidworld_cache_benchmark.py \
+  --android_world_path /path/to/android_world \
+  --run_mode baseline \
+  --output results/androidworld_cache/baseline_smoke \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --n_task_combinations 1 \
+  --limit_episodes 3 \
+  --page_cache_mode off
+
+CUDA_VISIBLE_DEVICES=4,5 python scripts/run_androidworld_cache_benchmark.py \
+  --android_world_path /path/to/android_world \
+  --run_mode warmup \
+  --output results/androidworld_cache/warmup \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --page_cache_mode observe \
+  --page_cache_scope dataset \
+  --page_cache_similarity tile
+
+CUDA_VISIBLE_DEVICES=4,5 python scripts/run_androidworld_cache_benchmark.py \
+  --android_world_path /path/to/android_world \
+  --run_mode evaluation \
+  --output results/androidworld_cache/eval_cache \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --page_cache_mode observe \
+  --page_cache_scope dataset \
+  --page_cache_similarity tile \
+  --cache_input results/androidworld_cache/warmup/page_cache_records.jsonl
+
+python scripts/summarize_androidworld_cache.py \
+  --baseline results/androidworld_cache/baseline_smoke \
+  --cache results/androidworld_cache/eval_cache \
+  --output results/androidworld_cache/comparison_summary.json
+```
+
+See `docs/2026-09-01_androidworld_cache_benchmark.md` for emulator setup notes,
+output fields, and current validation limits.
+
 ## Profiling
 
 Use the profiling scripts before changing acceleration code.  They reuse the

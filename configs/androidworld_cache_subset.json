@@ -1,0 +1,20 @@
+{
+  "tasks": [
+    "ContactsAddContact",
+    "ClockTimerEntry",
+    "ExpenseAddSingle",
+    "MarkorCreateFolder",
+    "MarkorCreateNote",
+    "SimpleSmsSend",
+    "SimpleSmsReply",
+    "SimpleCalendarAddOneEventTomorrow",
+    "SimpleCalendarAddOneEventRelativeDay",
+    "SimpleCalendarDeleteOneEvent"
+  ],
+  "n_task_combinations": 5,
+  "warmup_task_random_seed": 30,
+  "evaluation_task_random_seed": 31,
+  "smoke_task_random_seed": 32,
+  "max_steps": null,
+  "transition_pause": null
+}

@@ -79,6 +79,8 @@ class PageCacheProbe:
     processor_cache_entries: int = 0
     page_cache_entries: int = 0
     image_sha256: Optional[str] = None
+    matched_image_sha256: Optional[str] = None
+    matched_trajectory_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -179,6 +181,41 @@ class PageLevelCache:
             "processor_cache_entries": len(self._processor_inputs),
             "cache_evictions": self._pages.evictions + self._processor_inputs.evictions,
         }
+
+    def add_page_fingerprint(
+        self,
+        fingerprint: PageFingerprint,
+        trajectory_id: Optional[Any] = None,
+    ) -> None:
+        trajectory_text = None if trajectory_id is None else str(trajectory_id)
+        self._pages.put(fingerprint.image_sha256, _PageRecord(fingerprint, trajectory_text))
+
+    def export_page_records(self) -> Tuple[Dict[str, Any], ...]:
+        return tuple(
+            {
+                "fingerprint": record.fingerprint.to_dict(),
+                "trajectory_id": record.trajectory_id,
+            }
+            for _, record in self._pages.items()
+        )
+
+    def import_page_records(self, records: Iterable[Dict[str, Any]]) -> None:
+        for record in records:
+            fingerprint_data = record.get("fingerprint", record)
+            if not isinstance(fingerprint_data, dict):
+                continue
+            fingerprint = PageFingerprint(
+                image_sha256=str(fingerprint_data["image_sha256"]),
+                width=int(fingerprint_data["width"]),
+                height=int(fingerprint_data["height"]),
+                dhash64=str(fingerprint_data["dhash64"]),
+                tile_rows=int(fingerprint_data["tile_rows"]),
+                tile_cols=int(fingerprint_data["tile_cols"]),
+                tile_hashes=tuple(str(value) for value in fingerprint_data["tile_hashes"]),
+                ignored_top_ratio=float(fingerprint_data.get("ignored_top_ratio", 0.0)),
+                ignored_bottom_ratio=float(fingerprint_data.get("ignored_bottom_ratio", 0.0)),
+            )
+            self.add_page_fingerprint(fingerprint, record.get("trajectory_id"))
 
     def clear(self) -> None:
         self._pages.clear()
@@ -309,6 +346,8 @@ class PageLevelCache:
             patch_diff=self._patch_diff_dict(fingerprint, similarity, base_record),
             cache_lookup_seconds=lookup_seconds,
             image_sha256=fingerprint.image_sha256,
+            matched_image_sha256=base_record.fingerprint.image_sha256 if base_record else None,
+            matched_trajectory_id=base_record.trajectory_id if base_record else None,
         )
         self._fill_counts(probe)
         return probe
