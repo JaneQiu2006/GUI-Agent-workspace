@@ -1,0 +1,244 @@
+{
+  "experiment": {
+    "experiment_id": "E11_baseline",
+    "label": "E11 baseline",
+    "page_cache_mode": "off",
+    "page_cache_similarity": "tile",
+    "page_cache_scope": "trajectory",
+    "notes": "Reference E11: max_new_tokens=48, visual_token_mode=aggressive_reduce, no cache."
+  },
+  "status": "success",
+  "created_at": "2026-09-01T03:21:47.636894+00:00",
+  "ended_at": "2026-09-01T03:25:03.075884+00:00",
+  "commands": [
+    {
+      "name": "py_compile",
+      "command": "/data4/home/qiujiamin/anaconda3/envs/gui/bin/python -m py_compile test_framework/cache_fingerprint.py test_framework/cache_store.py test_framework/cache_inference.py test_framework/hf_gui_baseline.py scripts/androidcontrol_actions.py scripts/eval_androidcontrol.py scripts/profile_androidcontrol.py scripts/run_cache_extension_comparison.py"
+    },
+    {
+      "name": "eval",
+      "command": "/data4/home/qiujiamin/anaconda3/envs/gui/bin/python scripts/eval_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --output /data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_generate_profile/E11_baseline/eval.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode aggressive_reduce --point_tolerance 100.0 --page_cache_mode off --page_cache_scope trajectory --page_cache_similarity tile --page_cache_max_entries 128 --page_cache_near_dhash_threshold 4 --page_cache_near_tile_threshold 0.98 --page_cache_patch_tile_threshold 0.9 --page_cache_patch_max_changed_area_ratio 0.25 --page_cache_tile_rows 8 --page_cache_tile_cols 16 --page_cache_ignored_top_ratio 0.0 --page_cache_ignored_bottom_ratio 0.0"
+    },
+    {
+      "name": "profile_ttft",
+      "command": "/data4/home/qiujiamin/anaconda3/envs/gui/bin/python scripts/profile_androidcontrol.py --model_path /data2/home/models/Qwen3.8-27B --test_json data/androidcontrol_mini/test.json --output /data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_generate_profile/E11_baseline/profile.json --max_new_tokens 48 --device auto --device_map auto --dtype auto --batch_size 1 --visual_token_mode aggressive_reduce --point_tolerance 100.0 --page_cache_mode off --page_cache_scope trajectory --page_cache_similarity tile --page_cache_max_entries 128 --page_cache_near_dhash_threshold 4 --page_cache_near_tile_threshold 0.98 --page_cache_patch_tile_threshold 0.9 --page_cache_patch_max_changed_area_ratio 0.25 --page_cache_tile_rows 8 --page_cache_tile_cols 16 --page_cache_ignored_top_ratio 0.0 --page_cache_ignored_bottom_ratio 0.0 --limit 5 --warmup 1 --generation_profile_mode generate"
+    }
+  ],
+  "steps": [
+    {
+      "name": "py_compile",
+      "return_code": 0,
+      "ended_at": "2026-09-01T03:21:47.696000+00:00"
+    },
+    {
+      "name": "eval",
+      "return_code": 0,
+      "ended_at": "2026-09-01T03:24:28.748535+00:00"
+    },
+    {
+      "name": "profile_ttft",
+      "return_code": 0,
+      "ended_at": "2026-09-01T03:25:03.075060+00:00"
+    }
+  ],
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "0,7",
+    "ASCEND_RT_VISIBLE_DEVICES": null,
+    "NVIDIA_VISIBLE_DEVICES": null,
+    "PYTHONPATH": null,
+    "CONDA_DEFAULT_ENV": "gui",
+    "VIRTUAL_ENV": null
+  },
+  "notes": [
+    "Reference E11: max_new_tokens=48, visual_token_mode=aggressive_reduce, no cache."
+  ],
+  "wall_clock_seconds": 195.43886269908398,
+  "summary": {
+    "label": "E11 baseline",
+    "out_dir": "/data1/home/qiujiamin/GUI-Agent-workspace/results/cache_extension_comparison_generate_profile/E11_baseline",
+    "status": "running",
+    "failed_step": null,
+    "failure_tail": {},
+    "eval": {
+      "strict": {
+        "num_steps": 51,
+        "type_accuracy": 0.8235294117647058,
+        "step_success_rate": 0.7647058823529411,
+        "trajectory_success_rate": 0.4,
+        "avg_latency_seconds": 2.6339188537870846
+      },
+      "gui_only": {
+        "num_steps": 37,
+        "type_accuracy": 0.972972972972973,
+        "step_success_rate": 0.918918918918919,
+        "trajectory_success_rate": 0.8,
+        "avg_latency_seconds": 2.849364568680726
+      },
+      "transition_or_noop": {
+        "num_steps": 14,
+        "type_accuracy": 0.42857142857142855,
+        "step_success_rate": 0.35714285714285715,
+        "trajectory_success_rate": 0.3333333333333333,
+        "avg_latency_seconds": 2.0645266072824597
+      },
+      "open_app": {
+        "num_steps": 6,
+        "type_accuracy": 0.8333333333333334,
+        "step_success_rate": 0.6666666666666666,
+        "trajectory_success_rate": 0.6666666666666666,
+        "avg_latency_seconds": 2.0075654787942767
+      },
+      "wait": {
+        "num_steps": 8,
+        "type_accuracy": 0.125,
+        "step_success_rate": 0.125,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 2.107247453648597
+      },
+      "by_gt_type": {
+        "CLICK": {
+          "num_steps": 24,
+          "type_accuracy": 1.0,
+          "step_success_rate": 0.9166666666666666,
+          "trajectory_success_rate": 0.7777777777777778,
+          "avg_latency_seconds": 2.454241193869772
+        },
+        "LONG_PRESS": {
+          "num_steps": 1,
+          "type_accuracy": 0.0,
+          "step_success_rate": 0.0,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 2.454379089176655
+        },
+        "OPEN_APP": {
+          "num_steps": 6,
+          "type_accuracy": 0.8333333333333334,
+          "step_success_rate": 0.6666666666666666,
+          "trajectory_success_rate": 0.6666666666666666,
+          "avg_latency_seconds": 2.0075654787942767
+        },
+        "PRESS_BACK": {
+          "num_steps": 2,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 1.290258807130158
+        },
+        "SCROLL": {
+          "num_steps": 7,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 4.916200570229973
+        },
+        "TYPE": {
+          "num_steps": 3,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 2.3587998977551856
+        },
+        "WAIT": {
+          "num_steps": 8,
+          "type_accuracy": 0.125,
+          "step_success_rate": 0.125,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 2.107247453648597
+        }
+      },
+      "output_health": {
+        "pred_unknown": 0,
+        "contains_think_end": 0,
+        "hit_max_new_tokens": 0,
+        "json_enclosed": 51,
+        "avg_input_tokens": 1231.3921568627452,
+        "avg_output_tokens": 19.03921568627451,
+        "min_output_tokens": 6,
+        "median_output_tokens": 18,
+        "max_output_tokens": 42
+      },
+      "avg_latency_seconds": 2.6339188537870846,
+      "median_latency_seconds": 2.4574592718854547,
+      "wall_clock_seconds": 138.99289922323078,
+      "samples_per_second": 0.36692521909404163,
+      "peak_gpu_memory_gb": {
+        "0": 24.3086,
+        "1": 27.6791
+      }
+    },
+    "profile": {
+      "primary_timings_seconds": {
+        "build_prompt_seconds": {
+          "mean": 1.965165138244629e-05,
+          "min": 1.467578113079071e-05,
+          "max": 3.282446414232254e-05,
+          "median": 1.5748664736747742e-05
+        },
+        "apply_chat_template_seconds": {
+          "mean": 0.00031767524778842927,
+          "min": 0.00021273363381624222,
+          "max": 0.0004905359819531441,
+          "median": 0.00023739878088235855
+        },
+        "vision_preprocess_seconds": {
+          "mean": 0.07948991395533085,
+          "min": 0.06504878215491772,
+          "max": 0.09270956926047802,
+          "median": 0.0847249710932374
+        },
+        "processor_encode_seconds": {
+          "mean": 0.008877667598426342,
+          "min": 0.007092866115272045,
+          "max": 0.01065968256443739,
+          "median": 0.008655702695250511
+        },
+        "input_to_device_seconds": {
+          "mean": 0.001291298121213913,
+          "min": 0.001113956794142723,
+          "max": 0.001600346527993679,
+          "median": 0.0012394078075885773
+        },
+        "generate_seconds": {
+          "mean": 1.9984848069027066,
+          "min": 1.3216899298131466,
+          "max": 2.4864463256672025,
+          "median": 1.9088313886895776
+        },
+        "decode_seconds": {
+          "mean": 0.00021134447306394576,
+          "min": 0.00014439597725868225,
+          "max": 0.00029953382909297943,
+          "median": 0.00016867462545633316
+        },
+        "postprocess_seconds": {
+          "mean": 6.331577897071839e-05,
+          "min": 3.397651016712189e-05,
+          "max": 9.90498811006546e-05,
+          "median": 4.334188997745514e-05
+        },
+        "total_seconds": {
+          "mean": 2.088811131194234,
+          "min": 1.416772160679102,
+          "max": 2.566799983382225,
+          "median": 2.0039799381047487
+        }
+      },
+      "avg_input_tokens": 1221.8,
+      "avg_output_tokens": 13.0,
+      "effective_batch_size": 1,
+      "samples_per_second": 0.4784635046787123,
+      "output_tokens_per_second": 6.2200255608232595,
+      "final_memory": null
+    },
+    "cache": {
+      "eval": {
+        "mode": "off",
+        "num_records": 0
+      },
+      "profile": {
+        "mode": "off",
+        "num_records": 0
+      }
+    }
+  }
+}
