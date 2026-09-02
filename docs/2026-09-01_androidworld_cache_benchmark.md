@@ -70,6 +70,40 @@ EMULATOR_NAME=AndroidWorldAvd
 
 首次安装 AndroidWorld app/权限时加 `--perform_emulator_setup`，后续正常评测不要重复加。
 
+## Pip 依赖冲突处理
+
+AndroidWorld 官方 `requirements.txt` 当前 pin 了：
+
+```text
+protobuf==5.29.5
+numpy==1.26.3
+```
+
+这与 `tensorflow-cpu 2.21.0` 不兼容，因为后者要求 `protobuf>=6.31.1,<8.0.0`，并且常见的 `ml-dtypes 0.6.0` 要求 `numpy>=2.0.0`。因此不要在同一个 env 同时安装 AndroidWorld 和本项目仅用于 AndroidControl TFRecord 预处理的 `requirements-androidcontrol.txt`。
+
+推荐为 AndroidWorld 单独建环境：
+
+```bash
+conda create -n android_world_cache python=3.11 -y
+conda activate android_world_cache
+cd /path/to/android_world
+pip install -r requirements.txt
+python setup.py install
+cd /path/to/GUI-Agent-worksapce
+pip install -r requirements.txt
+```
+
+如果已经在当前 env 里装出了冲突，且这个 env 只用于 AndroidWorld benchmark，可以移除 TensorFlow 相关包后重装 AndroidWorld 依赖：
+
+```bash
+pip uninstall -y tensorflow tensorflow-cpu ml-dtypes
+cd /path/to/android_world
+pip install -r requirements.txt
+python setup.py install
+```
+
+如果仍需要运行 `scripts/prepare_androidcontrol.py`，请在另一个专门的 AndroidControl preprocessing env 里安装 `requirements-androidcontrol.txt`，不要复用 AndroidWorld benchmark env。
+
 ## 推荐远端执行顺序
 
 1. AndroidWorld 环境 smoke test，默认用 mock `complete` 动作，不加载本地大模型：
