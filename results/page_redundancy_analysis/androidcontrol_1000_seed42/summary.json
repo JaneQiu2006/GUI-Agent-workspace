@@ -1,0 +1,478 @@
+{
+  "config": {
+    "test_json": "data/androidcontrol_1000/test.json",
+    "data_dir": "data/androidcontrol_1000",
+    "output_dir": "results/page_redundancy_analysis/androidcontrol_1000_seed42",
+    "num_episodes": 1000,
+    "seed": 42,
+    "dhash_thresholds": [
+      0,
+      2,
+      4,
+      8,
+      16
+    ],
+    "tile_thresholds": [
+      0.9,
+      0.95,
+      0.98,
+      0.99
+    ],
+    "page_cache_config": {
+      "mode": "observe",
+      "scope": "dataset",
+      "similarity": "tile",
+      "max_entries": 4273,
+      "near_dhash_threshold": 4,
+      "patch_tile_threshold": 0.9,
+      "patch_max_changed_area_ratio": 0.25,
+      "patch_critical_regions": [],
+      "near_tile_threshold": 0.98,
+      "tile_rows": 8,
+      "tile_cols": 16,
+      "ignored_top_ratio": 0.0,
+      "ignored_bottom_ratio": 0.0,
+      "identity": "page-redundancy-analysis"
+    },
+    "episode_milestones": [
+      50,
+      100,
+      200,
+      500,
+      1000
+    ],
+    "created_at": "2026-09-02T08:30:43.854685+00:00"
+  },
+  "sampling": {
+    "input_record_count": 4273,
+    "input_episode_count": 783,
+    "selected_record_count": 4273,
+    "selected_episode_count": 783,
+    "requested_num_episodes": 1000,
+    "seed": 42,
+    "selection": "all_episodes_preserve_input_order"
+  },
+  "metadata": {
+    "field_sources": {
+      "episode": [
+        "episode_id",
+        "trajectory_id",
+        "episode",
+        "traj_id",
+        "trace_id"
+      ],
+      "step": [
+        "step_id",
+        "step_index",
+        "frame_index",
+        "step"
+      ],
+      "app": [
+        "app",
+        "app_name",
+        "application"
+      ],
+      "app_key": [
+        "package",
+        "package_name",
+        "app_package",
+        "launched_package",
+        "app",
+        "app_name",
+        "application"
+      ],
+      "package": [
+        "package",
+        "package_name",
+        "app_package",
+        "launched_package"
+      ],
+      "task": [
+        "goal",
+        "task_goal",
+        "instruction",
+        "task",
+        "query",
+        "question",
+        "任务"
+      ],
+      "task_note": "same_task uses goal/task_goal before task/instruction, because prepared AndroidControl task may include current-step text."
+    },
+    "available_dimensions": {
+      "episode": true,
+      "step": true,
+      "app": false,
+      "package": false,
+      "task": true
+    },
+    "non_null_counts": {
+      "episode": 4273,
+      "step": 4273,
+      "app": 0,
+      "package": 0,
+      "task": 4273
+    },
+    "skipped_group_dimensions": [
+      "app"
+    ]
+  },
+  "overall": {
+    "group": "overall",
+    "total_pages": 4273,
+    "pages_with_prior_group": 4272,
+    "exact_hit_count": 16,
+    "exact_hit_rate": 0.003744441844137608,
+    "exact_hit_rate_given_prior": 0.003745318352059925,
+    "current_cache_config_hit_count": 210,
+    "current_cache_config_hit_rate": 0.04914579920430611,
+    "current_cache_config_hit_rate_given_prior": 0.04915730337078652,
+    "min_dhash_p50": 11.0,
+    "min_dhash_p90": 17.0,
+    "min_dhash_p95": 19.0,
+    "max_tile_p50": 0.25,
+    "max_tile_p90": 0.84375,
+    "max_tile_p95": 0.9296875,
+    "dhash_le_0_count": 225,
+    "dhash_le_0_rate": 0.05265621343318511,
+    "dhash_le_2_count": 534,
+    "dhash_le_2_rate": 0.12497074654809268,
+    "dhash_le_4_count": 807,
+    "dhash_le_4_rate": 0.1888602855136906,
+    "dhash_le_8_count": 1572,
+    "dhash_le_8_rate": 0.36789141118652,
+    "dhash_le_16_count": 3676,
+    "dhash_le_16_rate": 0.8602855136906155,
+    "tile_ge_0.9_count": 292,
+    "tile_ge_0.9_rate": 0.06833606365551136,
+    "tile_ge_0.95_count": 153,
+    "tile_ge_0.95_rate": 0.035806225134565876,
+    "tile_ge_0.98_count": 63,
+    "tile_ge_0.98_rate": 0.014743739761291832,
+    "tile_ge_0.99_count": 41,
+    "tile_ge_0.99_rate": 0.009595132225602621
+  },
+  "grouped_stats": [
+    {
+      "group": "overall",
+      "total_pages": 4273,
+      "pages_with_prior_group": 4272,
+      "exact_hit_count": 16,
+      "exact_hit_rate": 0.003744441844137608,
+      "exact_hit_rate_given_prior": 0.003745318352059925,
+      "current_cache_config_hit_count": 210,
+      "current_cache_config_hit_rate": 0.04914579920430611,
+      "current_cache_config_hit_rate_given_prior": 0.04915730337078652,
+      "min_dhash_p50": 11.0,
+      "min_dhash_p90": 17.0,
+      "min_dhash_p95": 19.0,
+      "max_tile_p50": 0.25,
+      "max_tile_p90": 0.84375,
+      "max_tile_p95": 0.9296875,
+      "dhash_le_0_count": 225,
+      "dhash_le_0_rate": 0.05265621343318511,
+      "dhash_le_2_count": 534,
+      "dhash_le_2_rate": 0.12497074654809268,
+      "dhash_le_4_count": 807,
+      "dhash_le_4_rate": 0.1888602855136906,
+      "dhash_le_8_count": 1572,
+      "dhash_le_8_rate": 0.36789141118652,
+      "dhash_le_16_count": 3676,
+      "dhash_le_16_rate": 0.8602855136906155,
+      "tile_ge_0.9_count": 292,
+      "tile_ge_0.9_rate": 0.06833606365551136,
+      "tile_ge_0.95_count": 153,
+      "tile_ge_0.95_rate": 0.035806225134565876,
+      "tile_ge_0.98_count": 63,
+      "tile_ge_0.98_rate": 0.014743739761291832,
+      "tile_ge_0.99_count": 41,
+      "tile_ge_0.99_rate": 0.009595132225602621
+    },
+    {
+      "group": "same_episode",
+      "total_pages": 4273,
+      "pages_with_prior_group": 3490,
+      "exact_hit_count": 15,
+      "exact_hit_rate": 0.0035104142288790077,
+      "exact_hit_rate_given_prior": 0.004297994269340974,
+      "current_cache_config_hit_count": 173,
+      "current_cache_config_hit_rate": 0.04048677743973789,
+      "current_cache_config_hit_rate_given_prior": 0.0495702005730659,
+      "min_dhash_p50": 18.0,
+      "min_dhash_p90": 29.0,
+      "min_dhash_p95": 32.0,
+      "max_tile_p50": 0.11328125,
+      "max_tile_p90": 0.84375,
+      "max_tile_p95": 0.9375,
+      "dhash_le_0_count": 168,
+      "dhash_le_0_rate": 0.039316639363444886,
+      "dhash_le_2_count": 356,
+      "dhash_le_2_rate": 0.08331383103206179,
+      "dhash_le_4_count": 501,
+      "dhash_le_4_rate": 0.11724783524455885,
+      "dhash_le_8_count": 801,
+      "dhash_le_8_rate": 0.187456119822139,
+      "dhash_le_16_count": 1603,
+      "dhash_le_16_rate": 0.37514626725953665,
+      "tile_ge_0.9_count": 248,
+      "tile_ge_0.9_rate": 0.05803884858413293,
+      "tile_ge_0.95_count": 137,
+      "tile_ge_0.95_rate": 0.03206178329042827,
+      "tile_ge_0.98_count": 59,
+      "tile_ge_0.98_rate": 0.01380762930025743,
+      "tile_ge_0.99_count": 38,
+      "tile_ge_0.99_rate": 0.00889304937982682
+    },
+    {
+      "group": "cross_episode",
+      "total_pages": 4273,
+      "pages_with_prior_group": 4270,
+      "exact_hit_count": 1,
+      "exact_hit_rate": 0.0002340276152586005,
+      "exact_hit_rate_given_prior": 0.000234192037470726,
+      "current_cache_config_hit_count": 37,
+      "current_cache_config_hit_rate": 0.008659021764568219,
+      "current_cache_config_hit_rate_given_prior": 0.008665105386416861,
+      "min_dhash_p50": 13.0,
+      "min_dhash_p90": 18.0,
+      "min_dhash_p95": 19.0,
+      "max_tile_p50": 0.109375,
+      "max_tile_p90": 0.55078125,
+      "max_tile_p95": 0.681640625,
+      "dhash_le_0_count": 59,
+      "dhash_le_0_rate": 0.01380762930025743,
+      "dhash_le_2_count": 189,
+      "dhash_le_2_rate": 0.044231219283875495,
+      "dhash_le_4_count": 341,
+      "dhash_le_4_rate": 0.07980341680318277,
+      "dhash_le_8_count": 969,
+      "dhash_le_8_rate": 0.2267727591855839,
+      "dhash_le_16_count": 3499,
+      "dhash_le_16_rate": 0.8188626257898433,
+      "tile_ge_0.9_count": 44,
+      "tile_ge_0.9_rate": 0.010297215071378422,
+      "tile_ge_0.95_count": 16,
+      "tile_ge_0.95_rate": 0.003744441844137608,
+      "tile_ge_0.98_count": 4,
+      "tile_ge_0.98_rate": 0.000936110461034402,
+      "tile_ge_0.99_count": 3,
+      "tile_ge_0.99_rate": 0.0007020828457758015
+    },
+    {
+      "group": "same_task",
+      "total_pages": 4273,
+      "pages_with_prior_group": 3490,
+      "exact_hit_count": 15,
+      "exact_hit_rate": 0.0035104142288790077,
+      "exact_hit_rate_given_prior": 0.004297994269340974,
+      "current_cache_config_hit_count": 173,
+      "current_cache_config_hit_rate": 0.04048677743973789,
+      "current_cache_config_hit_rate_given_prior": 0.0495702005730659,
+      "min_dhash_p50": 18.0,
+      "min_dhash_p90": 29.0,
+      "min_dhash_p95": 32.0,
+      "max_tile_p50": 0.11328125,
+      "max_tile_p90": 0.84375,
+      "max_tile_p95": 0.9375,
+      "dhash_le_0_count": 168,
+      "dhash_le_0_rate": 0.039316639363444886,
+      "dhash_le_2_count": 356,
+      "dhash_le_2_rate": 0.08331383103206179,
+      "dhash_le_4_count": 501,
+      "dhash_le_4_rate": 0.11724783524455885,
+      "dhash_le_8_count": 801,
+      "dhash_le_8_rate": 0.187456119822139,
+      "dhash_le_16_count": 1603,
+      "dhash_le_16_rate": 0.37514626725953665,
+      "tile_ge_0.9_count": 248,
+      "tile_ge_0.9_rate": 0.05803884858413293,
+      "tile_ge_0.95_count": 137,
+      "tile_ge_0.95_rate": 0.03206178329042827,
+      "tile_ge_0.98_count": 59,
+      "tile_ge_0.98_rate": 0.01380762930025743,
+      "tile_ge_0.99_count": 38,
+      "tile_ge_0.99_rate": 0.00889304937982682
+    },
+    {
+      "group": "cross_task",
+      "total_pages": 4273,
+      "pages_with_prior_group": 4270,
+      "exact_hit_count": 1,
+      "exact_hit_rate": 0.0002340276152586005,
+      "exact_hit_rate_given_prior": 0.000234192037470726,
+      "current_cache_config_hit_count": 37,
+      "current_cache_config_hit_rate": 0.008659021764568219,
+      "current_cache_config_hit_rate_given_prior": 0.008665105386416861,
+      "min_dhash_p50": 13.0,
+      "min_dhash_p90": 18.0,
+      "min_dhash_p95": 19.0,
+      "max_tile_p50": 0.109375,
+      "max_tile_p90": 0.55078125,
+      "max_tile_p95": 0.681640625,
+      "dhash_le_0_count": 59,
+      "dhash_le_0_rate": 0.01380762930025743,
+      "dhash_le_2_count": 189,
+      "dhash_le_2_rate": 0.044231219283875495,
+      "dhash_le_4_count": 341,
+      "dhash_le_4_rate": 0.07980341680318277,
+      "dhash_le_8_count": 969,
+      "dhash_le_8_rate": 0.2267727591855839,
+      "dhash_le_16_count": 3499,
+      "dhash_le_16_rate": 0.8188626257898433,
+      "tile_ge_0.9_count": 44,
+      "tile_ge_0.9_rate": 0.010297215071378422,
+      "tile_ge_0.95_count": 16,
+      "tile_ge_0.95_rate": 0.003744441844137608,
+      "tile_ge_0.98_count": 4,
+      "tile_ge_0.98_rate": 0.000936110461034402,
+      "tile_ge_0.99_count": 3,
+      "tile_ge_0.99_rate": 0.0007020828457758015
+    }
+  ],
+  "nearest_neighbor_distribution": {
+    "page_count": 4273,
+    "unique_sha256_page_count": 4257,
+    "exact_duplicate_count": 16,
+    "min_dhash_hamming": {
+      "count": 4272,
+      "min": 0.0,
+      "max": 31.0,
+      "mean": 10.400514981273409,
+      "percentiles": {
+        "p10": 2.0,
+        "p25": 6.0,
+        "p50": 11.0,
+        "p75": 15.0,
+        "p90": 17.0,
+        "p95": 19.0
+      },
+      "histogram": [
+        {
+          "bin": "0",
+          "count": 225,
+          "rate": 0.05266853932584269
+        },
+        {
+          "bin": "[1,3)",
+          "count": 309,
+          "rate": 0.0723314606741573
+        },
+        {
+          "bin": "[3,5)",
+          "count": 273,
+          "rate": 0.06390449438202248
+        },
+        {
+          "bin": "[5,9)",
+          "count": 765,
+          "rate": 0.17907303370786518
+        },
+        {
+          "bin": "[9,17)",
+          "count": 2104,
+          "rate": 0.49250936329588013
+        },
+        {
+          "bin": "[17,33)",
+          "count": 596,
+          "rate": 0.13951310861423222
+        },
+        {
+          "bin": "[33,65)",
+          "count": 0,
+          "rate": 0.0
+        }
+      ]
+    },
+    "max_tile_unchanged_ratio": {
+      "count": 4269,
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.33561358046380885,
+      "percentiles": {
+        "p10": 0.0,
+        "p25": 0.0546875,
+        "p50": 0.25,
+        "p75": 0.5859375,
+        "p90": 0.84375,
+        "p95": 0.9296875
+      },
+      "histogram": [
+        {
+          "bin": "[0.0,0.5)",
+          "count": 2951,
+          "rate": 0.6912625907706723
+        },
+        {
+          "bin": "[0.5,0.75)",
+          "count": 697,
+          "rate": 0.1632700866713516
+        },
+        {
+          "bin": "[0.75,0.9)",
+          "count": 329,
+          "rate": 0.07706722885921762
+        },
+        {
+          "bin": "[0.9,0.95)",
+          "count": 139,
+          "rate": 0.032560318575778874
+        },
+        {
+          "bin": "[0.95,0.98)",
+          "count": 90,
+          "rate": 0.02108222066057625
+        },
+        {
+          "bin": "[0.98,0.99)",
+          "count": 22,
+          "rate": 0.005153431717029749
+        },
+        {
+          "bin": "[0.99,1.0]",
+          "count": 41,
+          "rate": 0.009604122745373624
+        }
+      ]
+    }
+  },
+  "history_size_stats": [
+    {
+      "history_episode_count": 50,
+      "page_count": 280,
+      "exact_hit_rate": 0.0035714285714285713,
+      "current_cache_config_hit_rate": 0.014285714285714285,
+      "dhash_le_4_hit_rate": 0.10357142857142858,
+      "tile_ge_0.98_hit_rate": 0.007142857142857143
+    },
+    {
+      "history_episode_count": 100,
+      "page_count": 568,
+      "exact_hit_rate": 0.0017605633802816902,
+      "current_cache_config_hit_rate": 0.03169014084507042,
+      "dhash_le_4_hit_rate": 0.13732394366197184,
+      "tile_ge_0.98_hit_rate": 0.008802816901408451
+    },
+    {
+      "history_episode_count": 200,
+      "page_count": 1094,
+      "exact_hit_rate": 0.0018281535648994515,
+      "current_cache_config_hit_rate": 0.04021937842778794,
+      "dhash_le_4_hit_rate": 0.1480804387568556,
+      "tile_ge_0.98_hit_rate": 0.011882998171846435
+    },
+    {
+      "history_episode_count": 500,
+      "page_count": 2707,
+      "exact_hit_rate": 0.004063538973032878,
+      "current_cache_config_hit_rate": 0.0421130402659771,
+      "dhash_le_4_hit_rate": 0.16882157369782047,
+      "tile_ge_0.98_hit_rate": 0.012560029553010712
+    }
+  ],
+  "plots": [
+    "results/page_redundancy_analysis/androidcontrol_1000_seed42/dhash_nearest_distribution.png",
+    "results/page_redundancy_analysis/androidcontrol_1000_seed42/tile_similarity_distribution.png",
+    "results/page_redundancy_analysis/androidcontrol_1000_seed42/threshold_vs_potential_hit_rate.png",
+    "results/page_redundancy_analysis/androidcontrol_1000_seed42/history_size_vs_potential_hit_rate.png"
+  ]
+}
