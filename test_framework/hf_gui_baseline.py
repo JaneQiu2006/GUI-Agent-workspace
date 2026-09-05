@@ -49,9 +49,24 @@ VISUAL_STAGE_KEYS = (
 )
 VISION_ENCODER_HOOK_NAMES = (
     "visual",
+    "model.visual",
+    "base_model.visual",
+    "module.visual",
     "vision_tower",
+    "model.vision_tower",
+    "base_model.vision_tower",
+    "module.vision_tower",
     "vision_model",
+    "model.vision_model",
+    "base_model.vision_model",
+    "module.vision_model",
     "vision_encoder",
+    "model.vision_encoder",
+    "base_model.vision_encoder",
+    "module.vision_encoder",
+)
+VISION_ENCODER_MODULE_BASENAMES = tuple(
+    dict.fromkeys(path.split(".")[-1] for path in VISION_ENCODER_HOOK_NAMES)
 )
 VISION_PROJECTOR_HOOK_NAMES = (
     "visual.merger",
@@ -822,6 +837,11 @@ def _resolve_visual_module(model: Any, module_path: Optional[str] = None) -> Tup
         module = _get_module_by_path(model, name)
         if module is not None:
             return module, name
+    if hasattr(model, "named_modules"):
+        for name, module in model.named_modules():
+            basename = str(name).split(".")[-1]
+            if basename in VISION_ENCODER_MODULE_BASENAMES and module is not model:
+                return module, str(name)
     return None, ""
 
 

@@ -9,9 +9,27 @@ from scripts.analyze_visual_feature_locality import (
     grouped_by,
     infer_token_grid,
 )
+from test_framework.hf_gui_baseline import _resolve_visual_module
 
 
 class VisualFeatureLocalityAnalysisTest(unittest.TestCase):
+    def test_resolve_nested_visual_module(self) -> None:
+        class VisualModule:
+            pass
+
+        class InnerModel:
+            def __init__(self) -> None:
+                self.visual = VisualModule()
+
+        class Model:
+            def __init__(self) -> None:
+                self.model = InnerModel()
+
+        model = Model()
+        module, path = _resolve_visual_module(model)
+        self.assertIs(module, model.model.visual)
+        self.assertEqual(path, "model.visual")
+
     def test_align_changed_tiles_to_different_visual_token_grid(self) -> None:
         changed_mask = [
             True, False, False, False,
