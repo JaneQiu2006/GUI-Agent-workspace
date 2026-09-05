@@ -170,7 +170,35 @@ max_pixels=512 * 28 * 28 = 401408
 
 输入侧 Python/processor 耗时主要是 `vision_preprocess_seconds`、`processor_encode_seconds`、`input_to_device_seconds`；输出侧可观察字段主要是 `generate_seconds`、`decode_seconds`、`postprocess_seconds`。
 
-注意：当前 profiling 尚未把 `generate_seconds` 内部细分成 prefill、TTFT 和逐 token decode，因此无法直接判断模型内部输入端 prefill 与输出端 decode 的精确占比。已有结果显示 `generate_seconds` 仍占 95% 左右，是主要耗时。
+Feature Cache 研究用的细粒度 profiling 已补充在 `stage_profile` 和 `profile_metadata` 中，不删除旧 `timings` 字段。每个 run/step 会记录：
+
+- `stage_profile.stages_ms` / `stage_profile.stage_ratios`
+- `visual_related_latency_ms` / `visual_related_ratio`
+- `profile_metadata.image_width` / `image_height`
+- `profile_metadata.image_grid_thw`
+- `profile_metadata.visual_patch_count` / `visual_token_count`
+- `profile_metadata.prompt_tokens` / `generated_tokens`
+- `stage_profile.feature_cache_boundary_candidates`
+
+`summary.fine_grained_profile` 会聚合：
+
+- `per_step`: mean / median / P90 / min / max
+- `per_episode`: 每个 episode 的总耗时与跨 episode summary
+- `overall`: 所有 step 总和及整体占比
+- `human_readable_summary`: 视觉占比、主瓶颈和建议缓存边界
+
+阶段映射口径：
+
+- `image_load_decode_preprocess`: `_process_vision_info(messages)`，包含图片 load/decode 和 Qwen-VL vision preprocess。
+- `image_resize_normalize_patch_or_token_construction`: `processor(text=..., images=..., return_tensors="pt")`，这是 Transformers processor 混合调用；当前无法无侵入拆出 tokenizer 与图像 resize/normalize/patch construction。
+- `vision_encoder_visual_feature_extraction`: profiling forward hook 捕获 `visual` / `vision_tower` / `vision_model` / `vision_encoder` 等已知视觉模块；未匹配时为 `null`。
+- `visual_feature_projector_adapter`: hook 捕获 `visual.merger` / projector / adapter 等已知模块；未匹配时为 `null`。
+- `text_tokenize_prompt_preprocess`: `build_gui_messages()` + `apply_chat_template_without_thinking()`；processor 内部 tokenizer 部分不重复计时。
+- `multimodal_prefill`: 仅 `--generation_profile_mode manual_greedy` 下可用，为首个 full-input forward 扣除可观测视觉模块后的剩余 prefill。
+- `decode_generation`: 默认 `model.generate()` 下是整段 generate；manual greedy 下是逐 token decode loop。
+- `total_inference_latency`: `profile_infer_one()` / `profile_infer_batch()` wall time，不含模型加载和 warmup。
+
+注意：默认 `--generation_profile_mode generate` 保持原 `model.generate()` 路径，`decode_generation` 是 inclusive generate 调用；视觉模块 hook 耗时是其中的子区间，因此这些 stage ratio 是诊断口径，不应简单相加。`manual_greedy` 只用于 profiling/实验，目前只支持 `batch_size=1`。
 
 ## Page-level cache baseline 状态
 
@@ -206,7 +234,7 @@ max_pixels=512 * 28 * 28 = 401408
 - Page cache baseline 只支持 `batch_size=1`；脚本中如果 `--page_cache_mode != off` 且 `--batch_size > 1` 会直接退出。
 - `observe` 只记录 exact/near/patch candidate，不复用输入，不改变推理结果。
 - `inputs` 只在完整 `chat_text + image_sha256 + visual_token_mode + min/max_pixels + model/device/dtype/attn identity` 一致时复用 processor outputs。
-- 目前没有 TTFT、prefill、逐 token decode profiling；`profile_androidcontrol.py` 仍只把 `model.generate()` 整体计为 `generate_seconds`。
+- TTFT、prefill、逐 token decode profiling 已通过 `--generation_profile_mode manual_greedy` 提供；默认 `generate` 模式仍只把 `model.generate()` 整体计为 `generate_seconds`。
 - 本地 Windows 没有模型/GPU，已做的验证仅包括 `py_compile`、脚本 `--help`、单张本地图片 fingerprint/cache sanity check。
 
 建议远端先运行：
@@ -261,17 +289,38 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
   --page_cache_mode inputs
 ```
 
-## 下一步 profiling 交接
+## Feature Cache profiling 状态
 
-用户计划在新对话窗口完善 profiling。新的窗口应优先补 HF 本地推理路径中的 `prefill_seconds`、`ttft_seconds` 和逐 token decode 指标，以便判断 page-level / prefix cache 是否真的命中 `generate_seconds` 内部瓶颈。
+2026-09-06 已完成面向 Feature Cache 的细粒度 profiling 补充：
 
-推荐实现方式：
+- 不重构默认推理路径；`infer_one()` / `infer_batch()` 和默认 eval 仍使用 `model.generate()`。
+- `profile_infer_one()` / `profile_infer_batch()` 输出新增 `profile_metadata` 和 `stage_profile`。
+- `profile_androidcontrol.py` / `profile_single_image.py` 输出新增 `summary.fine_grained_profile`，包含 per-step、per-episode、overall 的 mean / median / P90。
+- GPU stage 计时会在可见 CUDA device 上 synchronize，避免异步执行低估耗时。
+- 视觉 encoder / projector 计时使用临时 forward hook，只在 profiling 路径启用；未匹配模型模块时对应字段为 `null`，不强行拆分。
 
-- 不要替换默认 `model.generate()` 路径；新增可选 profiling wrapper，例如 `--generation_profile_mode generate|manual_greedy`，默认仍为 `generate`。
-- 手动 greedy decode 路径只用于 profiling/实验，保持 `do_sample=False`、`max_new_tokens=48`、同样 `pad/eos` 设置。
-- 先做单图 `profile_single_image.py` 的 repeat 验证，再接 `profile_androidcontrol.py --limit 5`，最后才做完整 eval。
-- 重点确认 manual greedy 输出与 `model.generate()` 的 raw response 或 canonical action 一致，否则不要用它比较 latency。
-- 如果继续做 full-prefix KV cache，应先基于 exact same prefix 的单图重复输入验证 `past_key_values`、position ids/cache position 和 decode trimming；不要对 near/patch 页面做 KV 复用。
+`--generation_profile_mode manual_greedy` 已用于暴露 `prefill_seconds`、`ttft_seconds`、逐 token decode 统计和 multimodal prefill 占比。该路径只用于 profiling/实验，当前限制：
+
+- 只支持 `batch_size=1`。
+- 保持 `do_sample=False` 和相同 pad/eos token 设置。
+- 需要远端确认 raw response 或 canonical action 与默认 `model.generate()` 一致，确认前不要把 manual greedy latency 当作默认生成路径的绝对替代指标。
+- Qwen3.5 VL / Qwen3.8 相关实现中，manual greedy 的 cached decode 已裁剪 `input_ids`、`cache_position`、`token_type_ids`、`mm_token_type_ids` 到当前 token，基于完整 `attention_mask` 和可用的 Qwen `rope_deltas` 显式构造当前 token 的 `position_ids`，并清空 `pixel_values` / `pixel_values_videos`，避免 RoPE shape 报错：`Expected size <prefix_len> but got size 1`。
+
+最小远端检查命令：
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/feature_cache_profile/debug_manual_greedy.json \
+  --limit 1 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce \
+  --generation_profile_mode manual_greedy
+```
+
+如果继续做 full-prefix KV cache，应先基于 exact same prefix 的单图重复输入验证 `past_key_values`、position ids/cache position 和 decode trimming；不要对 near/patch 页面做 KV 复用。
 
 ## 远端常用命令
 

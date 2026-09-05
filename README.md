@@ -197,6 +197,50 @@ The profile JSON reports stage timings for `build_prompt`,
 `input_to_device`, `generate`, `decode`, and `postprocess`, plus token counts
 and best-effort CUDA peak memory snapshots.
 
+For Feature Cache studies, the profiling outputs also include
+`stage_profile` and `profile_metadata` on each run/step.  The structured
+summary is under `summary.fine_grained_profile` and reports per-step,
+per-episode, and overall mean/median/P90 for:
+
+- image load/decode/preprocess
+- image resize/normalize/patch or token construction
+- vision encoder / visual feature extraction when a known visual module hook is available
+- visual projector / adapter when a known projector hook is available
+- text prompt preprocessing
+- multimodal prefill when manual greedy profiling is enabled
+- decode/generation
+- total inference latency
+
+The same summary records visual-related latency and ratio, input image size,
+visual patch/token counts when available, prompt token count, generated token
+count, and cache boundary candidates such as processor outputs, vision encoder
+outputs, projected visual embeddings, and exact multimodal prefill KV.
+
+By default `--generation_profile_mode generate` keeps using
+`model.generate()` and treats generation as an inclusive opaque stage.  Use the
+profiling-only manual greedy path when prefill, TTFT, and per-token decode
+timings are needed:
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_mini/test.json \
+  --output results/feature_cache_profile/profile_manual_greedy.json \
+  --limit 5 \
+  --warmup 1 \
+  --max_new_tokens 48 \
+  --visual_token_mode aggressive_reduce \
+  --generation_profile_mode manual_greedy
+```
+
+`manual_greedy` currently supports `batch_size=1` only and is for profiling
+experiments, not the default eval path.  Its cached decode step trims
+`input_ids`, `cache_position`, token type ids, and multimodal token type ids to
+the current token, explicitly builds current-token `position_ids` from the full
+attention mask plus Qwen rope deltas when available, and clears image pixel
+tensors so Qwen3.5 VL-style models do not reuse prefix-length position tensors
+during single-token decode.
+
 ## Acceleration Experiments
 
 Run the full experiment matrix from the repository root on Jupiter:

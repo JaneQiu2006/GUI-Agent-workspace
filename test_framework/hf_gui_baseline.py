@@ -1537,7 +1537,7 @@ def _next_token_inputs(
             prepared = model.prepare_inputs_for_generation(next_token, **model_kwargs)
             prepared["use_cache"] = True
             prepared["return_dict"] = True
-            return _sanitize_decode_inputs(prepared, next_token)
+            return _sanitize_decode_inputs(prepared, next_token, model)
         except TypeError:
             pass
     prepared = {
@@ -1550,10 +1550,10 @@ def _next_token_inputs(
         prepared["attention_mask"] = attention_mask
     if cache_position is not None:
         prepared["cache_position"] = cache_position
-    return _sanitize_decode_inputs(prepared, next_token)
+    return _sanitize_decode_inputs(prepared, next_token, model)
 
 
-def _sanitize_decode_inputs(prepared: Dict[str, Any], next_token: Any) -> Dict[str, Any]:
+def _sanitize_decode_inputs(prepared: Dict[str, Any], next_token: Any, model: Any) -> Dict[str, Any]:
     """Keep cached decode tensors aligned to the one-token step.
 
     Some multimodal Transformers implementations build full-length 3D position
@@ -1573,7 +1573,39 @@ def _sanitize_decode_inputs(prepared: Dict[str, Any], next_token: Any) -> Dict[s
         result[key] = _trim_sequence_tail(value, token_count)
     if result.get("input_ids") is None:
         result["input_ids"] = next_token
+    if result.get("position_ids") is None:
+        result["position_ids"] = _decode_position_ids(
+            result.get("attention_mask"),
+            token_count,
+            model,
+        )
     return result
+
+
+def _decode_position_ids(attention_mask: Any, token_count: int, model: Any) -> Any:
+    if attention_mask is None or not hasattr(attention_mask, "long"):
+        return None
+    position_ids = attention_mask.long().cumsum(-1) - 1
+    try:
+        position_ids = position_ids.masked_fill(attention_mask == 0, 0)
+    except Exception:
+        pass
+    position_ids = _trim_sequence_tail(position_ids, token_count)
+    rope_deltas = _model_rope_deltas(model)
+    if rope_deltas is not None:
+        try:
+            return position_ids.unsqueeze(0) + rope_deltas.to(device=position_ids.device)
+        except Exception:
+            return position_ids.unsqueeze(0)
+    return position_ids
+
+
+def _model_rope_deltas(model: Any) -> Any:
+    for owner in (getattr(model, "model", None), model):
+        value = getattr(owner, "rope_deltas", None)
+        if value is not None:
+            return value
+    return None
 
 
 def _trim_sequence_tail(value: Any, token_count: int) -> Any:
