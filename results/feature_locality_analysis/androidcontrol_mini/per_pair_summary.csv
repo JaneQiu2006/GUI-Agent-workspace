@@ -1,0 +1,2 @@
+pair_id,layer_id,episode_id,step_id,app,hit_type,pixel_changed_ratio,feature_metric,threshold,feature_changed_ratio,visual_token_count,page_tile_unchanged_ratio,changed_region_feature_mean,unchanged_region_feature_mean,error
+pair_000001,final,60,4,,near,0.0078125,cosine_distance,0.01,0.010610079575596816,1508,0.9921875,0.0014713406562805176,0.00041852952002843644,
