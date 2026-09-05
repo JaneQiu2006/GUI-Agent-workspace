@@ -1,0 +1,1641 @@
+{
+  "config": {
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "test_json": "data/androidcontrol_mini/test.json",
+    "data_dir": "data/androidcontrol_mini",
+    "limit": 5,
+    "warmup": 1,
+    "max_new_tokens": 48,
+    "device": "auto",
+    "device_map": "auto",
+    "dtype": "auto",
+    "attn_implementation": null,
+    "batch_size": 1,
+    "visual_token_mode": "aggressive_reduce",
+    "min_pixels": null,
+    "max_pixels": null,
+    "point_tolerance": 100.0,
+    "generation_profile_mode": "manual_greedy",
+    "page_cache": {
+      "mode": "off"
+    },
+    "created_at": "2026-09-05T19:45:20.115235+00:00"
+  },
+  "load_seconds": 44.649718629196286,
+  "summary": {
+    "num_steps": 5,
+    "num_trajectories": 2,
+    "type_accuracy": 0.8,
+    "step_success_rate": 0.6,
+    "trajectory_success_rate": 0.5,
+    "avg_latency_seconds": 6.255645867809653,
+    "min_latency_seconds": 3.5493073044344783,
+    "median_latency_seconds": 7.185404364950955,
+    "max_latency_seconds": 8.91864881850779,
+    "avg_input_tokens": 1221.8,
+    "avg_output_tokens": 13.0,
+    "min_output_tokens": 6.0,
+    "median_output_tokens": 12.0,
+    "max_output_tokens": 18.0,
+    "primary_metric_view": "gui_only",
+    "metric_view_policy": {
+      "strict": "All AndroidControl steps; kept for compatibility with earlier results.",
+      "gui_only": "Ordinary GUI manipulation steps, excluding OPEN_APP and WAIT.",
+      "transition_or_noop": "OPEN_APP and WAIT steps reported separately because static single-frame matching is noisy or environment-level.",
+      "open_app": "Environment-level app launch requests only.",
+      "wait": "Static wait/no-op requests only.",
+      "by_gt_type": "Per ground-truth action type breakdown."
+    },
+    "views": {
+      "strict": {
+        "num_steps": 5,
+        "num_trajectories": 2,
+        "type_accuracy": 0.8,
+        "step_success_rate": 0.6,
+        "trajectory_success_rate": 0.5,
+        "avg_latency_seconds": 6.255645867809653,
+        "min_latency_seconds": 3.5493073044344783,
+        "median_latency_seconds": 7.185404364950955,
+        "max_latency_seconds": 8.91864881850779,
+        "avg_input_tokens": 1221.8,
+        "avg_output_tokens": 13.0,
+        "min_output_tokens": 6.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 18.0
+      },
+      "gui_only": {
+        "num_steps": 3,
+        "num_trajectories": 2,
+        "type_accuracy": 1.0,
+        "step_success_rate": 1.0,
+        "trajectory_success_rate": 1.0,
+        "avg_latency_seconds": 6.81296087646236,
+        "min_latency_seconds": 3.5493073044344783,
+        "median_latency_seconds": 7.970926506444812,
+        "max_latency_seconds": 8.91864881850779,
+        "avg_input_tokens": 1223.0,
+        "avg_output_tokens": 13.666666666666666,
+        "min_output_tokens": 6.0,
+        "median_output_tokens": 17.0,
+        "max_output_tokens": 18.0
+      },
+      "transition_or_noop": {
+        "num_steps": 2,
+        "num_trajectories": 1,
+        "type_accuracy": 0.5,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 5.419673354830593,
+        "min_latency_seconds": 3.653942344710231,
+        "median_latency_seconds": 5.419673354830593,
+        "max_latency_seconds": 7.185404364950955,
+        "avg_input_tokens": 1220.0,
+        "avg_output_tokens": 12.0,
+        "min_output_tokens": 12.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 12.0
+      },
+      "open_app": {
+        "num_steps": 1,
+        "num_trajectories": 1,
+        "type_accuracy": 1.0,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 3.653942344710231,
+        "min_latency_seconds": 3.653942344710231,
+        "median_latency_seconds": 3.653942344710231,
+        "max_latency_seconds": 3.653942344710231,
+        "avg_input_tokens": 1220.0,
+        "avg_output_tokens": 12.0,
+        "min_output_tokens": 12.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 12.0
+      },
+      "wait": {
+        "num_steps": 1,
+        "num_trajectories": 1,
+        "type_accuracy": 0.0,
+        "step_success_rate": 0.0,
+        "trajectory_success_rate": 0.0,
+        "avg_latency_seconds": 7.185404364950955,
+        "min_latency_seconds": 7.185404364950955,
+        "median_latency_seconds": 7.185404364950955,
+        "max_latency_seconds": 7.185404364950955,
+        "avg_input_tokens": 1220.0,
+        "avg_output_tokens": 12.0,
+        "min_output_tokens": 12.0,
+        "median_output_tokens": 12.0,
+        "max_output_tokens": 12.0
+      },
+      "by_gt_type": {
+        "CLICK": {
+          "num_steps": 2,
+          "num_trajectories": 2,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 8.444787662476301,
+          "min_latency_seconds": 7.970926506444812,
+          "median_latency_seconds": 8.444787662476301,
+          "max_latency_seconds": 8.91864881850779,
+          "avg_input_tokens": 1224.0,
+          "avg_output_tokens": 17.5,
+          "min_output_tokens": 17.0,
+          "median_output_tokens": 17.5,
+          "max_output_tokens": 18.0
+        },
+        "OPEN_APP": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 1.0,
+          "step_success_rate": 0.0,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 3.653942344710231,
+          "min_latency_seconds": 3.653942344710231,
+          "median_latency_seconds": 3.653942344710231,
+          "max_latency_seconds": 3.653942344710231,
+          "avg_input_tokens": 1220.0,
+          "avg_output_tokens": 12.0,
+          "min_output_tokens": 12.0,
+          "median_output_tokens": 12.0,
+          "max_output_tokens": 12.0
+        },
+        "PRESS_BACK": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 1.0,
+          "step_success_rate": 1.0,
+          "trajectory_success_rate": 1.0,
+          "avg_latency_seconds": 3.5493073044344783,
+          "min_latency_seconds": 3.5493073044344783,
+          "median_latency_seconds": 3.5493073044344783,
+          "max_latency_seconds": 3.5493073044344783,
+          "avg_input_tokens": 1221.0,
+          "avg_output_tokens": 6.0,
+          "min_output_tokens": 6.0,
+          "median_output_tokens": 6.0,
+          "max_output_tokens": 6.0
+        },
+        "WAIT": {
+          "num_steps": 1,
+          "num_trajectories": 1,
+          "type_accuracy": 0.0,
+          "step_success_rate": 0.0,
+          "trajectory_success_rate": 0.0,
+          "avg_latency_seconds": 7.185404364950955,
+          "min_latency_seconds": 7.185404364950955,
+          "median_latency_seconds": 7.185404364950955,
+          "max_latency_seconds": 7.185404364950955,
+          "avg_input_tokens": 1220.0,
+          "avg_output_tokens": 12.0,
+          "min_output_tokens": 12.0,
+          "median_output_tokens": 12.0,
+          "max_output_tokens": 12.0
+        }
+      }
+    },
+    "timings_seconds": {
+      "apply_chat_template_seconds": {
+        "mean": 0.0005122687667608261,
+        "min": 0.0002808747813105583,
+        "max": 0.0007926905527710915,
+        "median": 0.0005720015615224838,
+        "p90": 0.0007926905527710915
+      },
+      "build_prompt_seconds": {
+        "mean": 3.849584609270096e-05,
+        "min": 1.839548349380493e-05,
+        "max": 5.896668881177902e-05,
+        "median": 4.609208554029465e-05,
+        "p90": 5.896668881177902e-05
+      },
+      "decode_loop_seconds": {
+        "mean": 4.3012276496738195,
+        "min": 1.8097733296453953,
+        "max": 6.515428654849529,
+        "median": 4.804839311167598,
+        "p90": 6.515428654849529
+      },
+      "decode_seconds": {
+        "mean": 0.0002969879657030106,
+        "min": 0.00018062256276607513,
+        "max": 0.0003925710916519165,
+        "median": 0.00033100787550210953,
+        "p90": 0.0003925710916519165
+      },
+      "decode_step_count": {
+        "mean": 12.0,
+        "min": 5.0,
+        "max": 17.0,
+        "median": 11.0,
+        "p90": 17.0
+      },
+      "decode_token_max_seconds": {
+        "mean": 0.5262886989861727,
+        "min": 0.42142958752810955,
+        "max": 0.6650492753833532,
+        "median": 0.5569638330489397,
+        "p90": 0.6650492753833532
+      },
+      "decode_token_mean_seconds": {
+        "mean": 0.3550842800888826,
+        "min": 0.21742230577563698,
+        "max": 0.4368035737425089,
+        "median": 0.36195466592907904,
+        "p90": 0.4368035737425089
+      },
+      "decode_token_median_seconds": {
+        "mean": 0.3636686550453305,
+        "min": 0.20220892876386642,
+        "max": 0.495224523358047,
+        "median": 0.36325906682759523,
+        "p90": 0.495224523358047
+      },
+      "decode_token_min_seconds": {
+        "mean": 0.23361604269593955,
+        "min": 0.13025384489446878,
+        "max": 0.327811049297452,
+        "median": 0.22734296415001154,
+        "p90": 0.327811049297452
+      },
+      "generate_seconds": {
+        "mean": 6.255645867809653,
+        "min": 3.5493073044344783,
+        "max": 8.91864881850779,
+        "median": 7.185404364950955,
+        "p90": 8.91864881850779
+      },
+      "input_to_device_seconds": {
+        "mean": 0.0023339470848441125,
+        "min": 0.0012986622750759125,
+        "max": 0.0061286697164177895,
+        "median": 0.001424986869096756,
+        "p90": 0.0061286697164177895
+      },
+      "postprocess_seconds": {
+        "mean": 8.618701249361039e-05,
+        "min": 4.241336137056351e-05,
+        "max": 0.00011853035539388657,
+        "median": 0.00011051353067159653,
+        "p90": 0.00011853035539388657
+      },
+      "prefill_seconds": {
+        "mean": 1.9471880733966827,
+        "min": 1.260514079593122,
+        "max": 2.931201039813459,
+        "median": 1.738616661168635,
+        "p90": 2.931201039813459
+      },
+      "processor_encode_seconds": {
+        "mean": 0.35364359710365534,
+        "min": 0.2829735232517123,
+        "max": 0.44213422387838364,
+        "median": 0.3695170758292079,
+        "p90": 0.44213422387838364
+      },
+      "total_seconds": {
+        "mean": 7.003894089907408,
+        "min": 4.285227001644671,
+        "max": 9.691131909377873,
+        "median": 7.733112948946655,
+        "p90": 9.691131909377873
+      },
+      "ttft_seconds": {
+        "mean": 1.9473199032247066,
+        "min": 1.2606653356924653,
+        "max": 2.9313268242403865,
+        "median": 1.7387138856574893,
+        "p90": 2.9313268242403865
+      },
+      "vision_preprocess_seconds": {
+        "mean": 0.39059789665043354,
+        "min": 0.17533514369279146,
+        "max": 0.5483914585784078,
+        "median": 0.40359637793153524,
+        "p90": 0.5483914585784078
+      }
+    },
+    "fine_grained_profile": {
+      "per_step": {
+        "stages_ms": {
+          "decode_generation": {
+            "count": 5,
+            "mean": 4301.2276496738195,
+            "median": 4804.839311167598,
+            "p90": 6515.428654849529,
+            "min": 1809.7733296453953,
+            "max": 6515.428654849529
+          },
+          "image_load_decode_preprocess": {
+            "count": 5,
+            "mean": 390.59789665043354,
+            "median": 403.59637793153524,
+            "p90": 548.3914585784078,
+            "min": 175.33514369279146,
+            "max": 548.3914585784078
+          },
+          "image_resize_normalize_patch_or_token_construction": {
+            "count": 5,
+            "mean": 353.64359710365534,
+            "median": 369.5170758292079,
+            "p90": 442.13422387838364,
+            "min": 282.9735232517123,
+            "max": 442.13422387838364
+          },
+          "multimodal_prefill": {
+            "count": 5,
+            "mean": 1947.1880733966827,
+            "median": 1738.616661168635,
+            "p90": 2931.201039813459,
+            "min": 1260.514079593122,
+            "max": 2931.201039813459
+          },
+          "text_tokenize_prompt_preprocess": {
+            "count": 5,
+            "mean": 0.5507646128535271,
+            "median": 0.6258431822061539,
+            "p90": 0.8410811424255371,
+            "min": 0.29927026480436325,
+            "max": 0.8410811424255371
+          },
+          "total_inference_latency": {
+            "count": 5,
+            "mean": 7003.894089907408,
+            "median": 7733.112948946655,
+            "p90": 9691.131909377873,
+            "min": 4285.227001644671,
+            "max": 9691.131909377873
+          }
+        },
+        "visual_related_latency_ms": {
+          "count": 5,
+          "mean": 744.2414937540889,
+          "median": 769.2937375977635,
+          "p90": 990.5256824567914,
+          "min": 544.8522195219994,
+          "max": 990.5256824567914
+        },
+        "visual_related_ratio": {
+          "count": 5,
+          "mean": 0.12087340382748095,
+          "median": 0.08994601842823222,
+          "p90": 0.21804089762370396,
+          "min": 0.0704570362697489,
+          "max": 0.21804089762370396
+        }
+      },
+      "per_episode": {
+        "episodes": [
+          {
+            "group_id": "0",
+            "num_steps": 3,
+            "stages_ms": {
+              "decode_generation": 13180.936263874173,
+              "image_load_decode_preprocess": 1001.0016467422247,
+              "image_resize_normalize_patch_or_token_construction": 941.1094496026635,
+              "multimodal_prefill": 6570.443956181407,
+              "text_tokenize_prompt_preprocess": 1.8287096172571182,
+              "total_inference_latency": 21709.4718599692
+            },
+            "stage_ratios": {
+              "decode_generation": 0.6071514014202681,
+              "image_load_decode_preprocess": 0.046108981977954246,
+              "image_resize_normalize_patch_or_token_construction": 0.04335017708735724,
+              "multimodal_prefill": 0.3026533302404681,
+              "text_tokenize_prompt_preprocess": 8.423556450625294e-05,
+              "total_inference_latency": 1.0
+            },
+            "visual_related_latency_ms": 1942.1110963448882,
+            "visual_related_ratio": 0.08945915906531149,
+            "metadata": {
+              "image_width": {
+                "count": 3,
+                "mean": 420.0,
+                "median": 420.0,
+                "p90": 420.0,
+                "min": 420.0,
+                "max": 420.0
+              },
+              "image_height": {
+                "count": 3,
+                "mean": 924.0,
+                "median": 924.0,
+                "p90": 924.0,
+                "min": 924.0,
+                "max": 924.0
+              },
+              "visual_patch_count": {
+                "count": 3,
+                "mean": 1508.0,
+                "median": 1508.0,
+                "p90": 1508.0,
+                "min": 1508.0,
+                "max": 1508.0
+              },
+              "visual_token_count": {
+                "count": 3,
+                "mean": 377.0,
+                "median": 377.0,
+                "p90": 377.0,
+                "min": 377.0,
+                "max": 377.0
+              },
+              "prompt_tokens": {
+                "count": 3,
+                "mean": 1219.6666666666667,
+                "median": 1220.0,
+                "p90": 1220.0,
+                "min": 1219.0,
+                "max": 1220.0
+              },
+              "generated_tokens": {
+                "count": 3,
+                "mean": 14.0,
+                "median": 12.0,
+                "p90": 18.0,
+                "min": 12.0,
+                "max": 18.0
+              }
+            }
+          },
+          {
+            "group_id": "20",
+            "num_steps": 2,
+            "stages_ms": {
+              "decode_generation": 8325.201984494925,
+              "image_load_decode_preprocess": 951.987836509943,
+              "image_resize_normalize_patch_or_token_construction": 827.1085359156132,
+              "multimodal_prefill": 3165.4964108020067,
+              "text_tokenize_prompt_preprocess": 0.9251134470105171,
+              "total_inference_latency": 13309.99858956784
+            },
+            "stage_ratios": {
+              "decode_generation": 0.6254848134259069,
+              "image_load_decode_preprocess": 0.07152426276409192,
+              "image_resize_normalize_patch_or_token_construction": 0.062141895083586814,
+              "multimodal_prefill": 0.23782845576580836,
+              "text_tokenize_prompt_preprocess": 6.95051498905196e-05,
+              "total_inference_latency": 1.0
+            },
+            "visual_related_latency_ms": 1779.0963724255562,
+            "visual_related_ratio": 0.13366615784767874,
+            "metadata": {
+              "image_width": {
+                "count": 2,
+                "mean": 420.0,
+                "median": 420.0,
+                "p90": 420.0,
+                "min": 420.0,
+                "max": 420.0
+              },
+              "image_height": {
+                "count": 2,
+                "mean": 924.0,
+                "median": 924.0,
+                "p90": 924.0,
+                "min": 924.0,
+                "max": 924.0
+              },
+              "visual_patch_count": {
+                "count": 2,
+                "mean": 1508.0,
+                "median": 1508.0,
+                "p90": 1508.0,
+                "min": 1508.0,
+                "max": 1508.0
+              },
+              "visual_token_count": {
+                "count": 2,
+                "mean": 377.0,
+                "median": 377.0,
+                "p90": 377.0,
+                "min": 377.0,
+                "max": 377.0
+              },
+              "prompt_tokens": {
+                "count": 2,
+                "mean": 1225.0,
+                "median": 1225.0,
+                "p90": 1229.0,
+                "min": 1221.0,
+                "max": 1229.0
+              },
+              "generated_tokens": {
+                "count": 2,
+                "mean": 11.5,
+                "median": 11.5,
+                "p90": 17.0,
+                "min": 6.0,
+                "max": 17.0
+              }
+            }
+          }
+        ],
+        "summary": {
+          "stages_ms": {
+            "decode_generation": {
+              "count": 2,
+              "mean": 10753.069124184549,
+              "median": 10753.069124184549,
+              "p90": 13180.936263874173,
+              "min": 8325.201984494925,
+              "max": 13180.936263874173
+            },
+            "image_load_decode_preprocess": {
+              "count": 2,
+              "mean": 976.4947416260839,
+              "median": 976.4947416260839,
+              "p90": 1001.0016467422247,
+              "min": 951.987836509943,
+              "max": 1001.0016467422247
+            },
+            "image_resize_normalize_patch_or_token_construction": {
+              "count": 2,
+              "mean": 884.1089927591383,
+              "median": 884.1089927591383,
+              "p90": 941.1094496026635,
+              "min": 827.1085359156132,
+              "max": 941.1094496026635
+            },
+            "multimodal_prefill": {
+              "count": 2,
+              "mean": 4867.970183491707,
+              "median": 4867.970183491707,
+              "p90": 6570.443956181407,
+              "min": 3165.4964108020067,
+              "max": 6570.443956181407
+            },
+            "text_tokenize_prompt_preprocess": {
+              "count": 2,
+              "mean": 1.3769115321338177,
+              "median": 1.3769115321338177,
+              "p90": 1.8287096172571182,
+              "min": 0.9251134470105171,
+              "max": 1.8287096172571182
+            },
+            "total_inference_latency": {
+              "count": 2,
+              "mean": 17509.73522476852,
+              "median": 17509.73522476852,
+              "p90": 21709.4718599692,
+              "min": 13309.99858956784,
+              "max": 21709.4718599692
+            }
+          },
+          "visual_related_latency_ms": {
+            "count": 2,
+            "mean": 1860.6037343852222,
+            "median": 1860.6037343852222,
+            "p90": 1942.1110963448882,
+            "min": 1779.0963724255562,
+            "max": 1942.1110963448882
+          },
+          "visual_related_ratio": {
+            "count": 2,
+            "mean": 0.11156265845649511,
+            "median": 0.11156265845649511,
+            "p90": 0.13366615784767874,
+            "min": 0.08945915906531149,
+            "max": 0.13366615784767874
+          }
+        }
+      },
+      "overall": {
+        "group_id": "overall",
+        "num_steps": 5,
+        "stages_ms": {
+          "decode_generation": 21506.138248369098,
+          "image_load_decode_preprocess": 1952.9894832521677,
+          "image_resize_normalize_patch_or_token_construction": 1768.2179855182767,
+          "multimodal_prefill": 9735.940366983414,
+          "text_tokenize_prompt_preprocess": 2.7538230642676353,
+          "total_inference_latency": 35019.47044953704
+        },
+        "stage_ratios": {
+          "decode_generation": 0.6141194590409179,
+          "image_load_decode_preprocess": 0.0557686754877239,
+          "image_resize_normalize_patch_or_token_construction": 0.05049242500871833,
+          "multimodal_prefill": 0.2780150653909195,
+          "text_tokenize_prompt_preprocess": 7.863691337754199e-05,
+          "total_inference_latency": 1.0
+        },
+        "visual_related_latency_ms": 3721.2074687704444,
+        "visual_related_ratio": 0.10626110049644223,
+        "metadata": {
+          "image_width": {
+            "count": 5,
+            "mean": 420.0,
+            "median": 420.0,
+            "p90": 420.0,
+            "min": 420.0,
+            "max": 420.0
+          },
+          "image_height": {
+            "count": 5,
+            "mean": 924.0,
+            "median": 924.0,
+            "p90": 924.0,
+            "min": 924.0,
+            "max": 924.0
+          },
+          "visual_patch_count": {
+            "count": 5,
+            "mean": 1508.0,
+            "median": 1508.0,
+            "p90": 1508.0,
+            "min": 1508.0,
+            "max": 1508.0
+          },
+          "visual_token_count": {
+            "count": 5,
+            "mean": 377.0,
+            "median": 377.0,
+            "p90": 377.0,
+            "min": 377.0,
+            "max": 377.0
+          },
+          "prompt_tokens": {
+            "count": 5,
+            "mean": 1221.8,
+            "median": 1220.0,
+            "p90": 1229.0,
+            "min": 1219.0,
+            "max": 1229.0
+          },
+          "generated_tokens": {
+            "count": 5,
+            "mean": 13.0,
+            "median": 12.0,
+            "p90": 18.0,
+            "min": 6.0,
+            "max": 18.0
+          }
+        }
+      },
+      "human_readable_summary": [
+        "视觉相关耗时占 total inference latency 的 10.63%。",
+        "当前可观测主瓶颈是 decode_generation，该阶段占比约 61.41%。",
+        "适合作为 Feature Cache 边界的中间结果：processor outputs, exact multimodal prefill KV"
+      ]
+    },
+    "cache": {
+      "mode": "off",
+      "num_records": 0
+    },
+    "output_health": {
+      "pred_unknown": 0,
+      "contains_think_end": 0,
+      "hit_max_new_tokens": 0,
+      "json_enclosed": 5,
+      "num_outputs": 5,
+      "avg_input_tokens": 1221.8,
+      "avg_output_tokens": 13.0,
+      "min_output_tokens": 6,
+      "median_output_tokens": 12,
+      "max_output_tokens": 18,
+      "malformed_parse_repair_count": null
+    },
+    "wall_clock_seconds": 35.06482589710504,
+    "samples_per_second": 0.14259303652817512,
+    "output_tokens_per_second": 1.8537094748662768,
+    "effective_batch_size": 1
+  },
+  "final_memory": {
+    "allocated_bytes": {
+      "0": 13372486656,
+      "1": 41358767104
+    },
+    "reserved_bytes": {
+      "0": 15816720384,
+      "1": 43908071424
+    },
+    "peak_allocated_bytes": {
+      "0": 14055369216,
+      "1": 42180300800
+    },
+    "peak_reserved_bytes": {
+      "0": 15816720384,
+      "1": 43908071424
+    },
+    "peak_allocated_gb": {
+      "0": 13.0901,
+      "1": 39.2835
+    },
+    "peak_reserved_gb": {
+      "0": 14.7305,
+      "1": 40.8926
+    }
+  },
+  "details": [
+    {
+      "episode_id": 0,
+      "step_id": 0,
+      "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Open the Zoho Meet app",
+      "image_path": "data/androidcontrol_mini/images/episode_0/step_0.png",
+      "gt_action": "OPEN_APP [Zoho Meeting]",
+      "raw_response": "{\"action\":\"open\",\"text\":\"Zoho Meet\"}",
+      "pred_action": "OPEN_APP [Zoho Meet]",
+      "gt_type": "OPEN_APP",
+      "pred_type": "OPEN_APP",
+      "metric_group": "open_app",
+      "strict_included": true,
+      "gui_only_included": false,
+      "type_success": true,
+      "step_success": false,
+      "latency_seconds": 3.653942344710231,
+      "input_tokens": 1220,
+      "output_tokens": 12,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 4.839058965444565e-05,
+        "apply_chat_template_seconds": 0.0007926905527710915,
+        "vision_preprocess_seconds": 0.344991615973413,
+        "processor_encode_seconds": 0.2829735232517123,
+        "input_to_device_seconds": 0.0015121987089514732,
+        "generate_seconds": 3.653942344710231,
+        "prefill_seconds": 1.260514079593122,
+        "ttft_seconds": 1.2606653356924653,
+        "decode_loop_seconds": 2.3916453635320067,
+        "decode_step_count": 11.0,
+        "decode_token_mean_seconds": 0.21742230577563698,
+        "decode_token_min_seconds": 0.13025384489446878,
+        "decode_token_max_seconds": 0.42142958752810955,
+        "decode_token_median_seconds": 0.20220892876386642,
+        "decode_seconds": 0.00021203327924013138,
+        "postprocess_seconds": 4.758499562740326e-05,
+        "total_seconds": 4.285227001644671
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 13381793280,
+          "1": 41358767104
+        },
+        "reserved_bytes": {
+          "0": 14596177920,
+          "1": 42687528960
+        },
+        "peak_allocated_bytes": {
+          "0": 14047211008,
+          "1": 42169537536
+        },
+        "peak_reserved_bytes": {
+          "0": 14596177920,
+          "1": 42687528960
+        },
+        "peak_allocated_gb": {
+          "0": 13.0825,
+          "1": 39.2734
+        },
+        "peak_reserved_gb": {
+          "0": 13.5938,
+          "1": 39.7559
+        }
+      },
+      "generation_profile": {
+        "mode": "manual_greedy",
+        "prefill_seconds": 1.260514079593122,
+        "ttft_seconds": 1.2606653356924653,
+        "decode_step_seconds": [
+          0.1393822729587555,
+          0.21148625761270523,
+          0.26901575084775686,
+          0.157257579267025,
+          0.14464023802429438,
+          0.3645848324522376,
+          0.42142958752810955,
+          0.1358742956072092,
+          0.13025384489446878,
+          0.2155117755755782,
+          0.20220892876386642
+        ],
+        "decode_step_count": 11,
+        "decode_loop_seconds": 2.3916453635320067,
+        "generate_seconds": 3.653942344710231,
+        "stop_reason": "eos",
+        "visual_module_hooks": {}
+      },
+      "profile_metadata": {
+        "image_sizes": [
+          {
+            "width": 420,
+            "height": 924
+          }
+        ],
+        "image_width": 420,
+        "image_height": 924,
+        "image_grid_thw": [
+          [
+            1,
+            58,
+            26
+          ]
+        ],
+        "visual_patch_count": 1508,
+        "visual_token_count": 377,
+        "prompt_tokens": 1220,
+        "generated_tokens": 12
+      },
+      "stage_profile": {
+        "stages_ms": {
+          "image_load_decode_preprocess": 344.991615973413,
+          "image_resize_normalize_patch_or_token_construction": 282.9735232517123,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.8410811424255371,
+          "multimodal_prefill": 1260.514079593122,
+          "decode_generation": 2391.6453635320067,
+          "total_inference_latency": 4285.227001644671
+        },
+        "stage_ratios": {
+          "image_load_decode_preprocess": 0.08050719736457489,
+          "image_resize_normalize_patch_or_token_construction": 0.06603466354130295,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.00019627458291071394,
+          "multimodal_prefill": 0.2941533970334212,
+          "decode_generation": 0.5581140421765505,
+          "total_inference_latency": 1.0
+        },
+        "visual_related_latency_ms": 627.9651392251253,
+        "visual_related_ratio": 0.14654186090587784,
+        "metadata": {
+          "image_sizes": [
+            {
+              "width": 420,
+              "height": 924
+            }
+          ],
+          "image_width": 420,
+          "image_height": 924,
+          "image_grid_thw": [
+            [
+              1,
+              58,
+              26
+            ]
+          ],
+          "visual_patch_count": 1508,
+          "visual_token_count": 377,
+          "prompt_tokens": 1220,
+          "generated_tokens": 12
+        },
+        "stage_descriptions": {
+          "image_load_decode_preprocess": "process_vision_info(messages): image file load/decode and Qwen-VL vision preprocessing.",
+          "image_resize_normalize_patch_or_token_construction": "processor(...): mixed processor path; includes image resize/normalize/patch construction and tokenizer work that Transformers does not expose separately.",
+          "vision_encoder_visual_feature_extraction": "Known model visual tower forward hooks when present; excludes nested projector timing when that nested hook is available.",
+          "visual_feature_projector_adapter": "Known visual projector/adapter/merger forward hooks when present; otherwise unavailable.",
+          "text_tokenize_prompt_preprocess": "build_phone_prompt + apply_chat_template; tokenizer time inside processor_encode is not separately exposed by the current processor call.",
+          "multimodal_prefill": "manual_greedy first forward remainder after separately hooked visual modules; unavailable for opaque model.generate mode.",
+          "decode_generation": "model.generate as a whole, or manual_greedy per-token decode loop when enabled.",
+          "total_inference_latency": "profile_infer_one/profile_infer_batch wall time excluding model load and warmup."
+        },
+        "notes": [
+          "processor_encode_seconds is a mixed Transformers processor call; this code path cannot cleanly split text tokenization from image resize/normalize/patch construction without changing the preprocessing flow.",
+          "multimodal_prefill is available only with --generation_profile_mode manual_greedy; model.generate does not expose prefill/decode boundaries.",
+          "vision encoder/projector timings are populated only when known module names are found and invoked.",
+          "In model.generate mode, decode_generation is the inclusive generate call and visual module hook timings are subspans inside it; stage ratios are therefore diagnostic, not additive."
+        ],
+        "feature_cache_boundary_candidates": [
+          {
+            "boundary": "processor outputs",
+            "why": "Caches resized/normalized visual tensors, image_grid_thw and tokenized prompt tensors before device transfer."
+          },
+          {
+            "boundary": "prefill KV cache",
+            "why": "Caches the exact multimodal prefix only when the full prompt and visual embeddings are unchanged."
+          }
+        ]
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 0,
+      "step_id": 1,
+      "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Open the Zoho Meet app",
+      "image_path": "data/androidcontrol_mini/images/episode_0/step_1.png",
+      "gt_action": "WAIT",
+      "raw_response": "{\"action\":\"open\",\"text\":\"Zoho Meet\"}",
+      "pred_action": "OPEN_APP [Zoho Meet]",
+      "gt_type": "WAIT",
+      "pred_type": "OPEN_APP",
+      "metric_group": "wait",
+      "strict_included": true,
+      "gui_only_included": false,
+      "type_success": false,
+      "step_success": false,
+      "latency_seconds": 7.185404364950955,
+      "input_tokens": 1220,
+      "output_tokens": 12,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 2.0634382963180542e-05,
+        "apply_chat_template_seconds": 0.0003360258415341377,
+        "vision_preprocess_seconds": 0.17533514369279146,
+        "processor_encode_seconds": 0.3695170758292079,
+        "input_to_device_seconds": 0.0013052178546786308,
+        "generate_seconds": 7.185404364950955,
+        "prefill_seconds": 2.378728836774826,
+        "ttft_seconds": 2.3788435915485024,
+        "decode_loop_seconds": 4.804839311167598,
+        "decode_step_count": 11.0,
+        "decode_token_mean_seconds": 0.4368035737425089,
+        "decode_token_min_seconds": 0.22734296415001154,
+        "decode_token_max_seconds": 0.5656927153468132,
+        "decode_token_median_seconds": 0.495224523358047,
+        "decode_seconds": 0.00033100787550210953,
+        "postprocess_seconds": 0.00011189281940460205,
+        "total_seconds": 7.733112948946655
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 13381793280,
+          "1": 41358767104
+        },
+        "reserved_bytes": {
+          "0": 14596177920,
+          "1": 42687528960
+        },
+        "peak_allocated_bytes": {
+          "0": 14047211008,
+          "1": 42169537536
+        },
+        "peak_reserved_bytes": {
+          "0": 14596177920,
+          "1": 42687528960
+        },
+        "peak_allocated_gb": {
+          "0": 13.0825,
+          "1": 39.2734
+        },
+        "peak_reserved_gb": {
+          "0": 13.5938,
+          "1": 39.7559
+        }
+      },
+      "generation_profile": {
+        "mode": "manual_greedy",
+        "prefill_seconds": 2.378728836774826,
+        "ttft_seconds": 2.3788435915485024,
+        "decode_step_seconds": [
+          0.5656927153468132,
+          0.5614376934245229,
+          0.35750167071819305,
+          0.3451847629621625,
+          0.370037860237062,
+          0.5344748664647341,
+          0.5180846424773335,
+          0.2701912000775337,
+          0.22734296415001154,
+          0.495224523358047,
+          0.5596664119511843
+        ],
+        "decode_step_count": 11,
+        "decode_loop_seconds": 4.804839311167598,
+        "generate_seconds": 7.185404364950955,
+        "stop_reason": "eos",
+        "visual_module_hooks": {}
+      },
+      "profile_metadata": {
+        "image_sizes": [
+          {
+            "width": 420,
+            "height": 924
+          }
+        ],
+        "image_width": 420,
+        "image_height": 924,
+        "image_grid_thw": [
+          [
+            1,
+            58,
+            26
+          ]
+        ],
+        "visual_patch_count": 1508,
+        "visual_token_count": 377,
+        "prompt_tokens": 1220,
+        "generated_tokens": 12
+      },
+      "stage_profile": {
+        "stages_ms": {
+          "image_load_decode_preprocess": 175.33514369279146,
+          "image_resize_normalize_patch_or_token_construction": 369.5170758292079,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.35666022449731827,
+          "multimodal_prefill": 2378.728836774826,
+          "decode_generation": 4804.839311167598,
+          "total_inference_latency": 7733.112948946655
+        },
+        "stage_ratios": {
+          "image_load_decode_preprocess": 0.022673294034412657,
+          "image_resize_normalize_patch_or_token_construction": 0.04778374223533625,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 4.612117097628838e-05,
+          "multimodal_prefill": 0.30760301219948405,
+          "decode_generation": 0.6213331349081195,
+          "total_inference_latency": 1.0
+        },
+        "visual_related_latency_ms": 544.8522195219994,
+        "visual_related_ratio": 0.0704570362697489,
+        "metadata": {
+          "image_sizes": [
+            {
+              "width": 420,
+              "height": 924
+            }
+          ],
+          "image_width": 420,
+          "image_height": 924,
+          "image_grid_thw": [
+            [
+              1,
+              58,
+              26
+            ]
+          ],
+          "visual_patch_count": 1508,
+          "visual_token_count": 377,
+          "prompt_tokens": 1220,
+          "generated_tokens": 12
+        },
+        "stage_descriptions": {
+          "image_load_decode_preprocess": "process_vision_info(messages): image file load/decode and Qwen-VL vision preprocessing.",
+          "image_resize_normalize_patch_or_token_construction": "processor(...): mixed processor path; includes image resize/normalize/patch construction and tokenizer work that Transformers does not expose separately.",
+          "vision_encoder_visual_feature_extraction": "Known model visual tower forward hooks when present; excludes nested projector timing when that nested hook is available.",
+          "visual_feature_projector_adapter": "Known visual projector/adapter/merger forward hooks when present; otherwise unavailable.",
+          "text_tokenize_prompt_preprocess": "build_phone_prompt + apply_chat_template; tokenizer time inside processor_encode is not separately exposed by the current processor call.",
+          "multimodal_prefill": "manual_greedy first forward remainder after separately hooked visual modules; unavailable for opaque model.generate mode.",
+          "decode_generation": "model.generate as a whole, or manual_greedy per-token decode loop when enabled.",
+          "total_inference_latency": "profile_infer_one/profile_infer_batch wall time excluding model load and warmup."
+        },
+        "notes": [
+          "processor_encode_seconds is a mixed Transformers processor call; this code path cannot cleanly split text tokenization from image resize/normalize/patch construction without changing the preprocessing flow.",
+          "multimodal_prefill is available only with --generation_profile_mode manual_greedy; model.generate does not expose prefill/decode boundaries.",
+          "vision encoder/projector timings are populated only when known module names are found and invoked.",
+          "In model.generate mode, decode_generation is the inclusive generate call and visual module hook timings are subspans inside it; stage ratios are therefore diagnostic, not additive."
+        ],
+        "feature_cache_boundary_candidates": [
+          {
+            "boundary": "processor outputs",
+            "why": "Caches resized/normalized visual tensors, image_grid_thw and tokenized prompt tensors before device transfer."
+          },
+          {
+            "boundary": "prefill KV cache",
+            "why": "Caches the exact multimodal prefix only when the full prompt and visual embeddings are unchanged."
+          }
+        ]
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 0,
+      "step_id": 2,
+      "task": "目标任务：Open the Zoho Meet app , view the scheduled meetings .\n当前步骤：Go to the Past section",
+      "image_path": "data/androidcontrol_mini/images/episode_0/step_2.png",
+      "gt_action": "CLICK <point>[[500,162]]</point>",
+      "raw_response": "{\"action\":\"tap\",\"x\":498,\"y\":161}",
+      "pred_action": "CLICK <point>[[498,161]]</point>",
+      "gt_type": "CLICK",
+      "pred_type": "CLICK",
+      "metric_group": "gui_only",
+      "strict_included": true,
+      "gui_only_included": true,
+      "type_success": true,
+      "step_success": true,
+      "latency_seconds": 8.91864881850779,
+      "input_tokens": 1219,
+      "output_tokens": 18,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 5.896668881177902e-05,
+        "apply_chat_template_seconds": 0.0005720015615224838,
+        "vision_preprocess_seconds": 0.48067488707602024,
+        "processor_encode_seconds": 0.2886188505217433,
+        "input_to_device_seconds": 0.0012986622750759125,
+        "generate_seconds": 8.91864881850779,
+        "prefill_seconds": 2.931201039813459,
+        "ttft_seconds": 2.9313268242403865,
+        "decode_loop_seconds": 5.984451589174569,
+        "decode_step_count": 17.0,
+        "decode_token_mean_seconds": 0.3520265640690923,
+        "decode_token_min_seconds": 0.16248004138469696,
+        "decode_token_max_seconds": 0.6650492753833532,
+        "decode_token_median_seconds": 0.36325906682759523,
+        "decode_seconds": 0.0003925710916519165,
+        "postprocess_seconds": 0.00011853035539388657,
+        "total_seconds": 9.691131909377873
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 13381793280,
+          "1": 41358767104
+        },
+        "reserved_bytes": {
+          "0": 14596177920,
+          "1": 42687528960
+        },
+        "peak_allocated_bytes": {
+          "0": 14047270400,
+          "1": 42169594880
+        },
+        "peak_reserved_bytes": {
+          "0": 14596177920,
+          "1": 42687528960
+        },
+        "peak_allocated_gb": {
+          "0": 13.0825,
+          "1": 39.2735
+        },
+        "peak_reserved_gb": {
+          "0": 13.5938,
+          "1": 39.7559
+        }
+      },
+      "generation_profile": {
+        "mode": "manual_greedy",
+        "prefill_seconds": 2.931201039813459,
+        "ttft_seconds": 2.9313268242403865,
+        "decode_step_seconds": [
+          0.2733783507719636,
+          0.18808237742632627,
+          0.3859517853707075,
+          0.6650492753833532,
+          0.36325906682759523,
+          0.4958807872608304,
+          0.5877202171832323,
+          0.2820501569658518,
+          0.38741875626146793,
+          0.3987763514742255,
+          0.36894852202385664,
+          0.41947783064097166,
+          0.2652020640671253,
+          0.2303768564015627,
+          0.1822998421266675,
+          0.16248004138469696,
+          0.3280993076041341
+        ],
+        "decode_step_count": 17,
+        "decode_loop_seconds": 5.984451589174569,
+        "generate_seconds": 8.91864881850779,
+        "stop_reason": "eos",
+        "visual_module_hooks": {}
+      },
+      "profile_metadata": {
+        "image_sizes": [
+          {
+            "width": 420,
+            "height": 924
+          }
+        ],
+        "image_width": 420,
+        "image_height": 924,
+        "image_grid_thw": [
+          [
+            1,
+            58,
+            26
+          ]
+        ],
+        "visual_patch_count": 1508,
+        "visual_token_count": 377,
+        "prompt_tokens": 1219,
+        "generated_tokens": 18
+      },
+      "stage_profile": {
+        "stages_ms": {
+          "image_load_decode_preprocess": 480.67488707602024,
+          "image_resize_normalize_patch_or_token_construction": 288.6188505217433,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.6309682503342628,
+          "multimodal_prefill": 2931.201039813459,
+          "decode_generation": 5984.451589174569,
+          "total_inference_latency": 9691.131909377873
+        },
+        "stage_ratios": {
+          "image_load_decode_preprocess": 0.04959945768676235,
+          "image_resize_normalize_patch_or_token_construction": 0.02978174822307948,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 6.510779713190058e-05,
+          "multimodal_prefill": 0.30246219608021296,
+          "decode_generation": 0.6175183296580207,
+          "total_inference_latency": 1.0
+        },
+        "visual_related_latency_ms": 769.2937375977635,
+        "visual_related_ratio": 0.07938120590984182,
+        "metadata": {
+          "image_sizes": [
+            {
+              "width": 420,
+              "height": 924
+            }
+          ],
+          "image_width": 420,
+          "image_height": 924,
+          "image_grid_thw": [
+            [
+              1,
+              58,
+              26
+            ]
+          ],
+          "visual_patch_count": 1508,
+          "visual_token_count": 377,
+          "prompt_tokens": 1219,
+          "generated_tokens": 18
+        },
+        "stage_descriptions": {
+          "image_load_decode_preprocess": "process_vision_info(messages): image file load/decode and Qwen-VL vision preprocessing.",
+          "image_resize_normalize_patch_or_token_construction": "processor(...): mixed processor path; includes image resize/normalize/patch construction and tokenizer work that Transformers does not expose separately.",
+          "vision_encoder_visual_feature_extraction": "Known model visual tower forward hooks when present; excludes nested projector timing when that nested hook is available.",
+          "visual_feature_projector_adapter": "Known visual projector/adapter/merger forward hooks when present; otherwise unavailable.",
+          "text_tokenize_prompt_preprocess": "build_phone_prompt + apply_chat_template; tokenizer time inside processor_encode is not separately exposed by the current processor call.",
+          "multimodal_prefill": "manual_greedy first forward remainder after separately hooked visual modules; unavailable for opaque model.generate mode.",
+          "decode_generation": "model.generate as a whole, or manual_greedy per-token decode loop when enabled.",
+          "total_inference_latency": "profile_infer_one/profile_infer_batch wall time excluding model load and warmup."
+        },
+        "notes": [
+          "processor_encode_seconds is a mixed Transformers processor call; this code path cannot cleanly split text tokenization from image resize/normalize/patch construction without changing the preprocessing flow.",
+          "multimodal_prefill is available only with --generation_profile_mode manual_greedy; model.generate does not expose prefill/decode boundaries.",
+          "vision encoder/projector timings are populated only when known module names are found and invoked.",
+          "In model.generate mode, decode_generation is the inclusive generate call and visual module hook timings are subspans inside it; stage ratios are therefore diagnostic, not additive."
+        ],
+        "feature_cache_boundary_candidates": [
+          {
+            "boundary": "processor outputs",
+            "why": "Caches resized/normalized visual tensors, image_grid_thw and tokenized prompt tensors before device transfer."
+          },
+          {
+            "boundary": "prefill KV cache",
+            "why": "Caches the exact multimodal prefix only when the full prompt and visual embeddings are unchanged."
+          }
+        ]
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 20,
+      "step_id": 0,
+      "task": "目标任务：Go to the mobile category after closing the pop up and browse the products\n当前步骤：Go to the previous page",
+      "image_path": "data/androidcontrol_mini/images/episode_20/step_0.png",
+      "gt_action": "PRESS_BACK",
+      "raw_response": "{\"action\":\"back\"}",
+      "pred_action": "PRESS_BACK",
+      "gt_type": "PRESS_BACK",
+      "pred_type": "PRESS_BACK",
+      "metric_group": "gui_only",
+      "strict_included": true,
+      "gui_only_included": true,
+      "type_success": true,
+      "step_success": true,
+      "latency_seconds": 3.5493073044344783,
+      "input_tokens": 1221,
+      "output_tokens": 6,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 4.609208554029465e-05,
+        "apply_chat_template_seconds": 0.0005797510966658592,
+        "vision_preprocess_seconds": 0.5483914585784078,
+        "processor_encode_seconds": 0.44213422387838364,
+        "input_to_device_seconds": 0.001424986869096756,
+        "generate_seconds": 3.5493073044344783,
+        "prefill_seconds": 1.738616661168635,
+        "ttft_seconds": 1.7387138856574893,
+        "decode_loop_seconds": 1.8097733296453953,
+        "decode_step_count": 5.0,
+        "decode_token_mean_seconds": 0.36195466592907904,
+        "decode_token_min_seconds": 0.32019231375306845,
+        "decode_token_max_seconds": 0.4223080836236477,
+        "decode_token_median_seconds": 0.3477970054373145,
+        "decode_seconds": 0.00018062256276607513,
+        "postprocess_seconds": 4.241336137056351e-05,
+        "total_seconds": 4.542843536473811
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 13381793280,
+          "1": 41358767104
+        },
+        "reserved_bytes": {
+          "0": 15204352000,
+          "1": 43295703040
+        },
+        "peak_allocated_bytes": {
+          "0": 14047472128,
+          "1": 42171414528
+        },
+        "peak_reserved_bytes": {
+          "0": 15204352000,
+          "1": 43295703040
+        },
+        "peak_allocated_gb": {
+          "0": 13.0827,
+          "1": 39.2752
+        },
+        "peak_reserved_gb": {
+          "0": 14.1602,
+          "1": 40.3223
+        }
+      },
+      "generation_profile": {
+        "mode": "manual_greedy",
+        "prefill_seconds": 1.738616661168635,
+        "ttft_seconds": 1.7387138856574893,
+        "decode_step_seconds": [
+          0.4223080836236477,
+          0.3866695314645767,
+          0.3477970054373145,
+          0.3328063953667879,
+          0.32019231375306845
+        ],
+        "decode_step_count": 5,
+        "decode_loop_seconds": 1.8097733296453953,
+        "generate_seconds": 3.5493073044344783,
+        "stop_reason": "eos",
+        "visual_module_hooks": {}
+      },
+      "profile_metadata": {
+        "image_sizes": [
+          {
+            "width": 420,
+            "height": 924
+          }
+        ],
+        "image_width": 420,
+        "image_height": 924,
+        "image_grid_thw": [
+          [
+            1,
+            58,
+            26
+          ]
+        ],
+        "visual_patch_count": 1508,
+        "visual_token_count": 377,
+        "prompt_tokens": 1221,
+        "generated_tokens": 6
+      },
+      "stage_profile": {
+        "stages_ms": {
+          "image_load_decode_preprocess": 548.3914585784078,
+          "image_resize_normalize_patch_or_token_construction": 442.13422387838364,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.6258431822061539,
+          "multimodal_prefill": 1738.616661168635,
+          "decode_generation": 1809.7733296453953,
+          "total_inference_latency": 4542.843536473811
+        },
+        "stage_ratios": {
+          "image_load_decode_preprocess": 0.12071546250172493,
+          "image_resize_normalize_patch_or_token_construction": 0.09732543512197903,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.00013776463511924912,
+          "multimodal_prefill": 0.3827155056540121,
+          "decode_generation": 0.39837897015712653,
+          "total_inference_latency": 1.0
+        },
+        "visual_related_latency_ms": 990.5256824567914,
+        "visual_related_ratio": 0.21804089762370396,
+        "metadata": {
+          "image_sizes": [
+            {
+              "width": 420,
+              "height": 924
+            }
+          ],
+          "image_width": 420,
+          "image_height": 924,
+          "image_grid_thw": [
+            [
+              1,
+              58,
+              26
+            ]
+          ],
+          "visual_patch_count": 1508,
+          "visual_token_count": 377,
+          "prompt_tokens": 1221,
+          "generated_tokens": 6
+        },
+        "stage_descriptions": {
+          "image_load_decode_preprocess": "process_vision_info(messages): image file load/decode and Qwen-VL vision preprocessing.",
+          "image_resize_normalize_patch_or_token_construction": "processor(...): mixed processor path; includes image resize/normalize/patch construction and tokenizer work that Transformers does not expose separately.",
+          "vision_encoder_visual_feature_extraction": "Known model visual tower forward hooks when present; excludes nested projector timing when that nested hook is available.",
+          "visual_feature_projector_adapter": "Known visual projector/adapter/merger forward hooks when present; otherwise unavailable.",
+          "text_tokenize_prompt_preprocess": "build_phone_prompt + apply_chat_template; tokenizer time inside processor_encode is not separately exposed by the current processor call.",
+          "multimodal_prefill": "manual_greedy first forward remainder after separately hooked visual modules; unavailable for opaque model.generate mode.",
+          "decode_generation": "model.generate as a whole, or manual_greedy per-token decode loop when enabled.",
+          "total_inference_latency": "profile_infer_one/profile_infer_batch wall time excluding model load and warmup."
+        },
+        "notes": [
+          "processor_encode_seconds is a mixed Transformers processor call; this code path cannot cleanly split text tokenization from image resize/normalize/patch construction without changing the preprocessing flow.",
+          "multimodal_prefill is available only with --generation_profile_mode manual_greedy; model.generate does not expose prefill/decode boundaries.",
+          "vision encoder/projector timings are populated only when known module names are found and invoked.",
+          "In model.generate mode, decode_generation is the inclusive generate call and visual module hook timings are subspans inside it; stage ratios are therefore diagnostic, not additive."
+        ],
+        "feature_cache_boundary_candidates": [
+          {
+            "boundary": "processor outputs",
+            "why": "Caches resized/normalized visual tensors, image_grid_thw and tokenized prompt tensors before device transfer."
+          },
+          {
+            "boundary": "prefill KV cache",
+            "why": "Caches the exact multimodal prefix only when the full prompt and visual embeddings are unchanged."
+          }
+        ]
+      },
+      "effective_batch_size": 1
+    },
+    {
+      "episode_id": 20,
+      "step_id": 1,
+      "task": "目标任务：Go to the mobile category after closing the pop up and browse the products\n当前步骤：Click on the Mobile category at the top left corner of the screen",
+      "image_path": "data/androidcontrol_mini/images/episode_20/step_1.png",
+      "gt_action": "CLICK <point>[[102,211]]</point>",
+      "raw_response": "{\"action\":\"tap\",\"x\":95,\"y\":223}",
+      "pred_action": "CLICK <point>[[95,223]]</point>",
+      "gt_type": "CLICK",
+      "pred_type": "CLICK",
+      "metric_group": "gui_only",
+      "strict_included": true,
+      "gui_only_included": true,
+      "type_success": true,
+      "step_success": true,
+      "latency_seconds": 7.970926506444812,
+      "input_tokens": 1229,
+      "output_tokens": 17,
+      "resolved_visual_token_mode": "aggressive_reduce",
+      "timings": {
+        "build_prompt_seconds": 1.839548349380493e-05,
+        "apply_chat_template_seconds": 0.0002808747813105583,
+        "vision_preprocess_seconds": 0.40359637793153524,
+        "processor_encode_seconds": 0.38497431203722954,
+        "input_to_device_seconds": 0.0061286697164177895,
+        "generate_seconds": 7.970926506444812,
+        "prefill_seconds": 1.4268797496333718,
+        "ttft_seconds": 1.4270498789846897,
+        "decode_loop_seconds": 6.515428654849529,
+        "decode_step_count": 16.0,
+        "decode_token_mean_seconds": 0.4072142909280956,
+        "decode_token_min_seconds": 0.327811049297452,
+        "decode_token_max_seconds": 0.5569638330489397,
+        "decode_token_median_seconds": 0.40985375083982944,
+        "decode_seconds": 0.00036870501935482025,
+        "postprocess_seconds": 0.00011051353067159653,
+        "total_seconds": 8.76715505309403
+      },
+      "memory": {
+        "allocated_bytes": {
+          "0": 13381793280,
+          "1": 41358767104
+        },
+        "reserved_bytes": {
+          "0": 15816720384,
+          "1": 43908071424
+        },
+        "peak_allocated_bytes": {
+          "0": 14055369216,
+          "1": 42180300800
+        },
+        "peak_reserved_bytes": {
+          "0": 15816720384,
+          "1": 43908071424
+        },
+        "peak_allocated_gb": {
+          "0": 13.0901,
+          "1": 39.2835
+        },
+        "peak_reserved_gb": {
+          "0": 14.7305,
+          "1": 40.8926
+        }
+      },
+      "generation_profile": {
+        "mode": "manual_greedy",
+        "prefill_seconds": 1.4268797496333718,
+        "ttft_seconds": 1.4270498789846897,
+        "decode_step_seconds": [
+          0.3606849145144224,
+          0.327811049297452,
+          0.3540654219686985,
+          0.4186260122805834,
+          0.5569638330489397,
+          0.370838331989944,
+          0.43329092860221863,
+          0.4137456938624382,
+          0.4347585989162326,
+          0.5051148375496268,
+          0.43978409469127655,
+          0.3527272939682007,
+          0.4059618078172207,
+          0.3753907587379217,
+          0.3428872097283602,
+          0.42277786787599325
+        ],
+        "decode_step_count": 16,
+        "decode_loop_seconds": 6.515428654849529,
+        "generate_seconds": 7.970926506444812,
+        "stop_reason": "eos",
+        "visual_module_hooks": {}
+      },
+      "profile_metadata": {
+        "image_sizes": [
+          {
+            "width": 420,
+            "height": 924
+          }
+        ],
+        "image_width": 420,
+        "image_height": 924,
+        "image_grid_thw": [
+          [
+            1,
+            58,
+            26
+          ]
+        ],
+        "visual_patch_count": 1508,
+        "visual_token_count": 377,
+        "prompt_tokens": 1229,
+        "generated_tokens": 17
+      },
+      "stage_profile": {
+        "stages_ms": {
+          "image_load_decode_preprocess": 403.59637793153524,
+          "image_resize_normalize_patch_or_token_construction": 384.97431203722954,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 0.29927026480436325,
+          "multimodal_prefill": 1426.8797496333718,
+          "decode_generation": 6515.428654849529,
+          "total_inference_latency": 8767.15505309403
+        },
+        "stage_ratios": {
+          "image_load_decode_preprocess": 0.04603504506163621,
+          "image_resize_normalize_patch_or_token_construction": 0.04391097336659601,
+          "vision_encoder_visual_feature_extraction": null,
+          "visual_feature_projector_adapter": null,
+          "text_tokenize_prompt_preprocess": 3.4135390898413205e-05,
+          "multimodal_prefill": 0.16275288174922942,
+          "decode_generation": 0.7431633882818304,
+          "total_inference_latency": 1.0
+        },
+        "visual_related_latency_ms": 788.5706899687648,
+        "visual_related_ratio": 0.08994601842823222,
+        "metadata": {
+          "image_sizes": [
+            {
+              "width": 420,
+              "height": 924
+            }
+          ],
+          "image_width": 420,
+          "image_height": 924,
+          "image_grid_thw": [
+            [
+              1,
+              58,
+              26
+            ]
+          ],
+          "visual_patch_count": 1508,
+          "visual_token_count": 377,
+          "prompt_tokens": 1229,
+          "generated_tokens": 17
+        },
+        "stage_descriptions": {
+          "image_load_decode_preprocess": "process_vision_info(messages): image file load/decode and Qwen-VL vision preprocessing.",
+          "image_resize_normalize_patch_or_token_construction": "processor(...): mixed processor path; includes image resize/normalize/patch construction and tokenizer work that Transformers does not expose separately.",
+          "vision_encoder_visual_feature_extraction": "Known model visual tower forward hooks when present; excludes nested projector timing when that nested hook is available.",
+          "visual_feature_projector_adapter": "Known visual projector/adapter/merger forward hooks when present; otherwise unavailable.",
+          "text_tokenize_prompt_preprocess": "build_phone_prompt + apply_chat_template; tokenizer time inside processor_encode is not separately exposed by the current processor call.",
+          "multimodal_prefill": "manual_greedy first forward remainder after separately hooked visual modules; unavailable for opaque model.generate mode.",
+          "decode_generation": "model.generate as a whole, or manual_greedy per-token decode loop when enabled.",
+          "total_inference_latency": "profile_infer_one/profile_infer_batch wall time excluding model load and warmup."
+        },
+        "notes": [
+          "processor_encode_seconds is a mixed Transformers processor call; this code path cannot cleanly split text tokenization from image resize/normalize/patch construction without changing the preprocessing flow.",
+          "multimodal_prefill is available only with --generation_profile_mode manual_greedy; model.generate does not expose prefill/decode boundaries.",
+          "vision encoder/projector timings are populated only when known module names are found and invoked.",
+          "In model.generate mode, decode_generation is the inclusive generate call and visual module hook timings are subspans inside it; stage ratios are therefore diagnostic, not additive."
+        ],
+        "feature_cache_boundary_candidates": [
+          {
+            "boundary": "processor outputs",
+            "why": "Caches resized/normalized visual tensors, image_grid_thw and tokenized prompt tensors before device transfer."
+          },
+          {
+            "boundary": "prefill KV cache",
+            "why": "Caches the exact multimodal prefix only when the full prompt and visual embeddings are unchanged."
+          }
+        ]
+      },
+      "effective_batch_size": 1
+    }
+  ]
+}
