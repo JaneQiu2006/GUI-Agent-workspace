@@ -1537,7 +1537,7 @@ def _next_token_inputs(
             prepared = model.prepare_inputs_for_generation(next_token, **model_kwargs)
             prepared["use_cache"] = True
             prepared["return_dict"] = True
-            return prepared
+            return _sanitize_decode_inputs(prepared, next_token)
         except TypeError:
             pass
     prepared = {
@@ -1550,7 +1550,41 @@ def _next_token_inputs(
         prepared["attention_mask"] = attention_mask
     if cache_position is not None:
         prepared["cache_position"] = cache_position
-    return prepared
+    return _sanitize_decode_inputs(prepared, next_token)
+
+
+def _sanitize_decode_inputs(prepared: Dict[str, Any], next_token: Any) -> Dict[str, Any]:
+    """Keep cached decode tensors aligned to the one-token step.
+
+    Some multimodal Transformers implementations build full-length 3D position
+    ids from the attention mask even when past_key_values are supplied.  The
+    language model then receives one hidden state but prefix-length position ids,
+    which breaks rotary embedding shapes.  GenerationMixin normally handles this
+    inside its loop; the manual profiling loop trims the same per-step tensors
+    here.
+    """
+    token_count = int(next_token.shape[-1])
+    result = dict(prepared)
+    for key in ("pixel_values", "pixel_values_videos"):
+        if key in result:
+            result[key] = None
+    for key in ("input_ids", "position_ids", "cache_position", "token_type_ids", "mm_token_type_ids"):
+        value = result.get(key)
+        result[key] = _trim_sequence_tail(value, token_count)
+    if result.get("input_ids") is None:
+        result["input_ids"] = next_token
+    return result
+
+
+def _trim_sequence_tail(value: Any, token_count: int) -> Any:
+    if value is None or not hasattr(value, "shape"):
+        return value
+    shape = getattr(value, "shape", ())
+    if not shape:
+        return value
+    if int(shape[-1]) <= token_count:
+        return value
+    return value[..., -token_count:]
 
 
 def _model_forward(model: Any, kwargs: Dict[str, Any]) -> Any:
