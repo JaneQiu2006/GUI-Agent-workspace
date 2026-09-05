@@ -89,6 +89,16 @@ class GuiProfiledInferenceResult(GuiInferenceResult):
     stage_profile: Dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class VisualFeatureExtractionResult:
+    features: Any
+    feature_source: str
+    layer_id: str
+    prompt: str
+    input_tokens: int
+    profile_metadata: Dict[str, Any] = field(default_factory=dict)
+
+
 def build_gui_messages(
     image_path: Path,
     instruction: str,
@@ -350,6 +360,90 @@ def generate_response(
 
 def postprocess_response(raw_response: str) -> Dict[str, Any]:
     return parse_action(raw_response)
+
+
+def extract_visual_features(
+    model: Any,
+    processor: Any,
+    image_path: Path,
+    instruction: str = "",
+    device: str = "auto",
+    history: Optional[List[Dict[str, Any]]] = None,
+    low_level: Optional[Any] = None,
+    visual_token_mode: str = "default",
+    min_pixels: Optional[int] = None,
+    max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
+    layer_id: str = "final",
+    vision_module_path: Optional[str] = None,
+) -> VisualFeatureExtractionResult:
+    """Run only the vision path and return per-token visual features.
+
+    This is a profiling/cache-research boundary. It does not mutate model weights
+    and intentionally avoids language generation.
+    """
+    import torch
+
+    messages, prompt = build_gui_messages(
+        image_path,
+        instruction,
+        history,
+        low_level,
+        visual_token_mode=visual_token_mode,
+        min_pixels=min_pixels,
+        max_pixels=max_pixels,
+        action_hint=action_hint,
+    )
+    chat_text = apply_chat_template_without_thinking(processor, messages)
+    image_inputs, video_inputs = _process_vision_info(messages)
+    inputs = processor(
+        text=[chat_text],
+        images=image_inputs,
+        videos=video_inputs,
+        padding=True,
+        return_tensors="pt",
+    )
+    input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
+    visual_module, resolved_module_path = _resolve_visual_module(model, vision_module_path)
+    if visual_module is None:
+        raise RuntimeError("No supported visual module found on model")
+    target_device = (
+        _input_device(model, device)
+        if device != "auto"
+        else (_module_device(visual_module) or _input_device(model, device))
+    )
+    if hasattr(inputs, "to") and target_device is not None:
+        inputs = inputs.to(target_device)
+
+    input_dict = _as_input_dict(inputs)
+    with torch.inference_mode():
+        visual_output = _call_visual_module_for_features(
+            visual_module,
+            input_dict,
+            layer_id=layer_id,
+        )
+    features = _visual_feature_tensor(visual_output, layer_id=layer_id)
+    if features is None:
+        raise RuntimeError(f"Could not extract tensor features from visual output for layer_id={layer_id!r}")
+    features = _flatten_visual_features(features).detach().float().cpu()
+    metadata = build_profile_metadata(
+        processor,
+        image_inputs,
+        inputs,
+        input_tokens,
+        output_tokens=None,
+    )
+    metadata["feature_dim"] = int(features.shape[-1]) if len(features.shape) >= 2 else None
+    metadata["feature_token_count"] = int(features.shape[0]) if len(features.shape) >= 1 else None
+    metadata["processor_merge_size"] = _processor_merge_size(processor)
+    return VisualFeatureExtractionResult(
+        features=features,
+        feature_source=resolved_module_path,
+        layer_id=layer_id,
+        prompt=prompt,
+        input_tokens=input_tokens,
+        profile_metadata=metadata,
+    )
 
 
 def apply_chat_template_without_thinking(processor: Any, messages: List[Dict[str, Any]]) -> str:
@@ -718,6 +812,95 @@ def _get_module_by_path(model: Any, module_path: str) -> Optional[Any]:
             return None
         current = getattr(current, part)
     return current
+
+
+def _resolve_visual_module(model: Any, module_path: Optional[str] = None) -> Tuple[Optional[Any], str]:
+    if module_path:
+        module = _get_module_by_path(model, module_path)
+        return module, module_path
+    for name in VISION_ENCODER_HOOK_NAMES:
+        module = _get_module_by_path(model, name)
+        if module is not None:
+            return module, name
+    return None, ""
+
+
+def _module_device(module: Any) -> Optional[Any]:
+    try:
+        return next(module.parameters()).device
+    except (AttributeError, StopIteration):
+        return getattr(module, "device", None)
+
+
+def _call_visual_module_for_features(visual_module: Any, inputs: Dict[str, Any], layer_id: str = "final") -> Any:
+    pixel_values = inputs.get("pixel_values")
+    if pixel_values is None:
+        raise RuntimeError("Visual feature extraction requires pixel_values")
+    image_grid_thw = inputs.get("image_grid_thw")
+    wants_hidden = layer_id not in {"", "final", "last"}
+    candidate_kwargs = []
+    if image_grid_thw is not None:
+        candidate_kwargs.extend(
+            [
+                {"grid_thw": image_grid_thw},
+                {"image_grid_thw": image_grid_thw},
+            ]
+        )
+    candidate_kwargs.append({})
+    errors = []
+    for kwargs in candidate_kwargs:
+        call_kwargs = dict(kwargs)
+        if wants_hidden:
+            call_kwargs["output_hidden_states"] = True
+        try:
+            return visual_module(pixel_values, **call_kwargs)
+        except TypeError as exc:
+            errors.append(str(exc))
+            if wants_hidden and "output_hidden_states" in call_kwargs:
+                call_kwargs.pop("output_hidden_states", None)
+                try:
+                    return visual_module(pixel_values, **call_kwargs)
+                except TypeError as fallback_exc:
+                    errors.append(str(fallback_exc))
+        except RuntimeError:
+            raise
+    joined = "; ".join(errors[-3:])
+    raise RuntimeError(f"Unable to call visual module for feature extraction: {joined}")
+
+
+def _visual_feature_tensor(output: Any, layer_id: str = "final") -> Optional[Any]:
+    layer_key = str(layer_id or "final")
+    if layer_key not in {"final", "last"}:
+        hidden_states = getattr(output, "hidden_states", None)
+        if hidden_states is None and isinstance(output, Mapping):
+            hidden_states = output.get("hidden_states")
+        if hidden_states is None:
+            return None
+        index = int(layer_key)
+        return hidden_states[index]
+    for name in ("last_hidden_state", "image_embeds", "hidden_states"):
+        value = getattr(output, name, None)
+        if value is None and isinstance(output, Mapping):
+            value = output.get(name)
+        if name == "hidden_states" and isinstance(value, (list, tuple)) and len(value) > 0:
+            value = value[-1]
+        if hasattr(value, "shape"):
+            return value
+    if hasattr(output, "shape"):
+        return output
+    if isinstance(output, (list, tuple)):
+        for value in output:
+            if hasattr(value, "shape"):
+                return value
+    return None
+
+
+def _flatten_visual_features(features: Any) -> Any:
+    if len(features.shape) == 3 and int(features.shape[0]) == 1:
+        return features[0]
+    if len(features.shape) > 2:
+        return features.reshape(-1, int(features.shape[-1]))
+    return features
 
 
 def _image_sizes(image_inputs: Any) -> List[Dict[str, int]]:

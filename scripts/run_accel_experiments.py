@@ -355,6 +355,7 @@ def build_commands(args: argparse.Namespace, experiment: Experiment, out_dir: Pa
         "scripts/eval_androidcontrol.py",
         "scripts/profile_androidcontrol.py",
         "scripts/profile_single_image.py",
+        "scripts/analyze_visual_feature_locality.py",
     ]
     eval_command = [
         args.python,
