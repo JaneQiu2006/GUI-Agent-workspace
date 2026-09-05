@@ -44,6 +44,7 @@ def summarize_runs(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
             "min": min(values),
             "max": max(values),
             "median": statistics.median(values),
+            "p90": percentile90(values),
         }
     output_values = [run["output_tokens"] for run in runs if run.get("output_tokens") is not None]
     if output_values:
@@ -51,8 +52,159 @@ def summarize_runs(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
     input_values = [run["input_tokens"] for run in runs if run.get("input_tokens") is not None]
     if input_values:
         summary["avg_input_tokens"] = statistics.fmean(input_values)
+    summary["fine_grained_profile"] = summarize_fine_grained_profiles(runs)
     summary["cache"] = summarize_cache_runs(runs)
     return summary
+
+
+def summarize_fine_grained_profiles(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    profiles = [run["stage_profile"] for run in runs if isinstance(run.get("stage_profile"), dict)]
+    if not profiles:
+        return {}
+    episode = sum_stage_profiles(profiles, group_id="single_image")
+    overall = sum_stage_profiles(profiles, group_id="overall")
+    return {
+        "per_step": summarize_stage_values(profiles),
+        "per_episode": {
+            "episodes": [episode],
+            "summary": summarize_stage_values([episode]),
+        },
+        "overall": overall,
+        "human_readable_summary": build_human_summary(overall),
+    }
+
+
+def summarize_stage_values(profiles: List[Dict[str, Any]]) -> Dict[str, Any]:
+    stage_keys = sorted({
+        key
+        for profile in profiles
+        for key, value in (profile.get("stages_ms") or {}).items()
+        if value is not None
+    })
+    stage_summary = {}
+    for key in stage_keys:
+        values = [
+            float(profile["stages_ms"][key])
+            for profile in profiles
+            if (profile.get("stages_ms") or {}).get(key) is not None
+        ]
+        stage_summary[key] = summarize_values(values)
+    visual_values = [
+        float(profile["visual_related_latency_ms"])
+        for profile in profiles
+        if profile.get("visual_related_latency_ms") is not None
+    ]
+    visual_ratios = [
+        float(profile["visual_related_ratio"])
+        for profile in profiles
+        if profile.get("visual_related_ratio") is not None
+    ]
+    return {
+        "stages_ms": stage_summary,
+        "visual_related_latency_ms": summarize_values(visual_values),
+        "visual_related_ratio": summarize_values(visual_ratios),
+    }
+
+
+def sum_stage_profiles(profiles: List[Dict[str, Any]], group_id: str) -> Dict[str, Any]:
+    stage_keys = sorted({
+        key
+        for profile in profiles
+        for key, value in (profile.get("stages_ms") or {}).items()
+        if value is not None
+    })
+    stages_ms = {
+        key: sum(
+            float(profile["stages_ms"][key])
+            for profile in profiles
+            if (profile.get("stages_ms") or {}).get(key) is not None
+        )
+        for key in stage_keys
+    }
+    total_ms = float(stages_ms.get("total_inference_latency", 0.0))
+    visual_ms = sum(float(stages_ms.get(key, 0.0)) for key in (
+        "image_load_decode_preprocess",
+        "image_resize_normalize_patch_or_token_construction",
+        "vision_encoder_visual_feature_extraction",
+        "visual_feature_projector_adapter",
+    ))
+    metadata = summarize_metadata([profile.get("metadata") or {} for profile in profiles])
+    return {
+        "group_id": group_id,
+        "num_steps": len(profiles),
+        "stages_ms": stages_ms,
+        "stage_ratios": {
+            key: value / total_ms if total_ms > 0 else None
+            for key, value in stages_ms.items()
+        },
+        "visual_related_latency_ms": visual_ms,
+        "visual_related_ratio": visual_ms / total_ms if total_ms > 0 else None,
+        "metadata": metadata,
+    }
+
+
+def summarize_metadata(metadata_items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "image_width": summarize_values([item.get("image_width") for item in metadata_items if item.get("image_width") is not None]),
+        "image_height": summarize_values([item.get("image_height") for item in metadata_items if item.get("image_height") is not None]),
+        "visual_patch_count": summarize_values([item.get("visual_patch_count") for item in metadata_items if item.get("visual_patch_count") is not None]),
+        "visual_token_count": summarize_values([item.get("visual_token_count") for item in metadata_items if item.get("visual_token_count") is not None]),
+        "prompt_tokens": summarize_values([item.get("prompt_tokens") for item in metadata_items if item.get("prompt_tokens") is not None]),
+        "generated_tokens": summarize_values([item.get("generated_tokens") for item in metadata_items if item.get("generated_tokens") is not None]),
+    }
+
+
+def summarize_values(values: List[Any]) -> Dict[str, Any]:
+    numeric = [float(value) for value in values if value is not None]
+    if not numeric:
+        return {"count": 0}
+    return {
+        "count": len(numeric),
+        "mean": statistics.fmean(numeric),
+        "median": statistics.median(numeric),
+        "p90": percentile90(numeric),
+        "min": min(numeric),
+        "max": max(numeric),
+    }
+
+
+def percentile90(values: List[float]) -> float:
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        return 0.0
+    index = max(0, (9 * len(ordered) + 9) // 10 - 1)
+    return ordered[min(index, len(ordered) - 1)]
+
+
+def build_human_summary(overall: Dict[str, Any]) -> List[str]:
+    stages = overall.get("stages_ms") or {}
+    ratios = overall.get("stage_ratios") or {}
+    visual_ratio = overall.get("visual_related_ratio")
+    visual_text = "unknown" if visual_ratio is None else f"{visual_ratio * 100:.2f}%"
+    bottleneck_keys = [
+        "image_load_decode_preprocess",
+        "image_resize_normalize_patch_or_token_construction",
+        "vision_encoder_visual_feature_extraction",
+        "visual_feature_projector_adapter",
+        "multimodal_prefill",
+        "decode_generation",
+    ]
+    available = [(key, float(stages[key])) for key in bottleneck_keys if stages.get(key) is not None]
+    bottleneck = max(available, key=lambda item: item[1])[0] if available else "unknown"
+    cache_boundaries = []
+    if stages.get("image_resize_normalize_patch_or_token_construction", 0.0) > 0:
+        cache_boundaries.append("processor outputs")
+    if stages.get("vision_encoder_visual_feature_extraction", 0.0) > 0:
+        cache_boundaries.append("vision encoder outputs")
+    if stages.get("visual_feature_projector_adapter", 0.0) > 0:
+        cache_boundaries.append("projected visual embeddings")
+    if stages.get("multimodal_prefill", 0.0) > 0:
+        cache_boundaries.append("exact multimodal prefill KV")
+    return [
+        f"视觉相关耗时占 total inference latency 的 {visual_text}。",
+        f"当前可观测主瓶颈是 {bottleneck}，该阶段占比约 {float(ratios.get(bottleneck) or 0.0) * 100:.2f}%。",
+        "适合作为 Feature Cache 边界的中间结果：" + (", ".join(cache_boundaries) if cache_boundaries else "当前 profile 未观测到可缓存视觉边界。"),
+    ]
 
 
 def summarize_cache_runs(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -210,6 +362,8 @@ def main() -> int:
                 "memory": result.memory,
                 "cache": result.cache,
                 "generation_profile": result.generation_profile,
+                "profile_metadata": result.profile_metadata,
+                "stage_profile": result.stage_profile,
             }
         )
 

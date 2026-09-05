@@ -8,12 +8,13 @@ profiling or acceleration code can be inserted later.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 import statistics
 import time
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 from benchmark_runner import parse_action
 from cache_inference import PageLevelCache
@@ -30,6 +31,38 @@ VISION_TOKEN_MODES: Dict[str, Dict[str, int]] = {
 }
 STATIC_VISION_TOKEN_MODES = {"default", "mild_reduce", "aggressive_reduce"}
 GENERATION_PROFILE_MODES = ("generate", "manual_greedy")
+PROFILE_STAGE_DESCRIPTIONS = {
+    "image_load_decode_preprocess": "process_vision_info(messages): image file load/decode and Qwen-VL vision preprocessing.",
+    "image_resize_normalize_patch_or_token_construction": "processor(...): mixed processor path; includes image resize/normalize/patch construction and tokenizer work that Transformers does not expose separately.",
+    "vision_encoder_visual_feature_extraction": "Known model visual tower forward hooks when present; excludes nested projector timing when that nested hook is available.",
+    "visual_feature_projector_adapter": "Known visual projector/adapter/merger forward hooks when present; otherwise unavailable.",
+    "text_tokenize_prompt_preprocess": "build_phone_prompt + apply_chat_template; tokenizer time inside processor_encode is not separately exposed by the current processor call.",
+    "multimodal_prefill": "manual_greedy first forward remainder after separately hooked visual modules; unavailable for opaque model.generate mode.",
+    "decode_generation": "model.generate as a whole, or manual_greedy per-token decode loop when enabled.",
+    "total_inference_latency": "profile_infer_one/profile_infer_batch wall time excluding model load and warmup.",
+}
+VISUAL_STAGE_KEYS = (
+    "image_load_decode_preprocess",
+    "image_resize_normalize_patch_or_token_construction",
+    "vision_encoder_visual_feature_extraction",
+    "visual_feature_projector_adapter",
+)
+VISION_ENCODER_HOOK_NAMES = (
+    "visual",
+    "vision_tower",
+    "vision_model",
+    "vision_encoder",
+)
+VISION_PROJECTOR_HOOK_NAMES = (
+    "visual.merger",
+    "multi_modal_projector",
+    "multimodal_projector",
+    "mm_projector",
+    "vision_projector",
+    "visual_projection",
+    "vision_projection",
+    "visual.adapter",
+)
 InferItem = Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any], Optional[str]]
 
 
@@ -52,6 +85,8 @@ class GuiProfiledInferenceResult(GuiInferenceResult):
     timings: Dict[str, float]
     memory: Dict[str, Any]
     generation_profile: Optional[Dict[str, Any]] = None
+    profile_metadata: Dict[str, Any] = field(default_factory=dict)
+    stage_profile: Dict[str, Any] = field(default_factory=dict)
 
 
 def build_gui_messages(
@@ -511,6 +546,321 @@ def generate_batch_response(
     return [text.strip() for text in output_text], latency, output_tokens
 
 
+def build_profile_metadata(
+    processor: Any,
+    image_inputs: Any,
+    inputs: Any,
+    input_tokens: int,
+    output_tokens: Optional[int] = None,
+    item_index: Optional[int] = None,
+) -> Dict[str, Any]:
+    image_sizes = _image_sizes(image_inputs)
+    if item_index is not None and item_index < len(image_sizes):
+        image_sizes = [image_sizes[item_index]]
+    image_grid_thw = _image_grid_thw(inputs)
+    item_grid_thw = image_grid_thw
+    if item_index is not None and item_index < len(image_grid_thw):
+        item_grid_thw = [image_grid_thw[item_index]]
+    visual_patch_count = _visual_patch_count(inputs, item_grid_thw, item_index=item_index)
+    visual_token_count = _visual_token_count(processor, inputs, item_grid_thw)
+    metadata: Dict[str, Any] = {
+        "image_sizes": image_sizes,
+        "image_width": image_sizes[0]["width"] if image_sizes else None,
+        "image_height": image_sizes[0]["height"] if image_sizes else None,
+        "image_grid_thw": item_grid_thw,
+        "visual_patch_count": visual_patch_count,
+        "visual_token_count": visual_token_count,
+        "prompt_tokens": input_tokens,
+        "generated_tokens": output_tokens,
+    }
+    return metadata
+
+
+def build_stage_profile(timings: Dict[str, float], metadata: Dict[str, Any]) -> Dict[str, Any]:
+    stages_seconds = {
+        "image_load_decode_preprocess": _timing_value(timings, "vision_preprocess_seconds"),
+        "image_resize_normalize_patch_or_token_construction": _timing_value(timings, "processor_encode_seconds"),
+        "vision_encoder_visual_feature_extraction": _optional_timing(
+            timings,
+            "vision_encoder_exclusive_seconds"
+            if "vision_encoder_exclusive_seconds" in timings
+            else "vision_encoder_seconds",
+        ),
+        "visual_feature_projector_adapter": _optional_timing(timings, "vision_projector_seconds"),
+        "text_tokenize_prompt_preprocess": (
+            _timing_value(timings, "build_prompt_seconds")
+            + _timing_value(timings, "apply_chat_template_seconds")
+        ),
+        "multimodal_prefill": _multimodal_prefill_remainder(timings),
+        "decode_generation": (
+            timings.get("decode_loop_seconds")
+            if "decode_loop_seconds" in timings
+            else timings.get("generate_seconds")
+        ),
+        "total_inference_latency": _timing_value(timings, "total_seconds"),
+    }
+    total_seconds = _timing_value(timings, "total_seconds")
+    stages_ms = {
+        key: (float(value) * 1000.0 if value is not None else None)
+        for key, value in stages_seconds.items()
+    }
+    stage_ratios = {
+        key: (float(value) / total_seconds if value is not None and total_seconds > 0 else None)
+        for key, value in stages_seconds.items()
+    }
+    visual_seconds = sum(
+        float(stages_seconds[key] or 0.0)
+        for key in VISUAL_STAGE_KEYS
+        if stages_seconds[key] is not None
+    )
+    return {
+        "stages_ms": stages_ms,
+        "stage_ratios": stage_ratios,
+        "visual_related_latency_ms": visual_seconds * 1000.0,
+        "visual_related_ratio": visual_seconds / total_seconds if total_seconds > 0 else None,
+        "metadata": metadata,
+        "stage_descriptions": PROFILE_STAGE_DESCRIPTIONS,
+        "notes": [
+            "processor_encode_seconds is a mixed Transformers processor call; this code path cannot cleanly split text tokenization from image resize/normalize/patch construction without changing the preprocessing flow.",
+            "multimodal_prefill is available only with --generation_profile_mode manual_greedy; model.generate does not expose prefill/decode boundaries.",
+            "vision encoder/projector timings are populated only when known module names are found and invoked.",
+            "In model.generate mode, decode_generation is the inclusive generate call and visual module hook timings are subspans inside it; stage ratios are therefore diagnostic, not additive.",
+        ],
+        "feature_cache_boundary_candidates": _feature_cache_boundary_candidates(stages_ms),
+    }
+
+
+@contextmanager
+def profile_model_visual_modules(model: Any, torch: Any, target_device: Optional[Any]) -> Iterator[Dict[str, Any]]:
+    records: Dict[str, Any] = {
+        "vision_encoder_seconds": 0.0,
+        "vision_projector_seconds": 0.0,
+        "hooked_modules": {},
+    }
+    handles = []
+
+    def register(stage: str, module_path: str) -> None:
+        module = _get_module_by_path(model, module_path)
+        if module is None or not hasattr(module, "register_forward_pre_hook"):
+            return
+        records["hooked_modules"][stage] = module_path
+
+        def pre_hook(_module: Any, _inputs: Any) -> None:
+            _sync_if_cuda(torch, target_device)
+            setattr(_module, "_gui_profile_started_at", time.perf_counter())
+
+        def post_hook(_module: Any, _inputs: Any, _output: Any) -> None:
+            _sync_if_cuda(torch, target_device)
+            started = getattr(_module, "_gui_profile_started_at", None)
+            if started is not None:
+                records[stage] += time.perf_counter() - started
+
+        handles.append(module.register_forward_pre_hook(pre_hook))
+        handles.append(module.register_forward_hook(post_hook))
+
+    for name in VISION_ENCODER_HOOK_NAMES:
+        if "vision_encoder_seconds" not in records["hooked_modules"]:
+            register("vision_encoder_seconds", name)
+    for name in VISION_PROJECTOR_HOOK_NAMES:
+        if "vision_projector_seconds" not in records["hooked_modules"]:
+            register("vision_projector_seconds", name)
+    try:
+        yield records
+    finally:
+        for handle in handles:
+            handle.remove()
+
+
+def _timing_value(timings: Dict[str, float], key: str) -> float:
+    return float(timings.get(key, 0.0) or 0.0)
+
+
+def _optional_timing(timings: Dict[str, float], key: str) -> Optional[float]:
+    if key not in timings:
+        return None
+    return _timing_value(timings, key)
+
+
+def _visual_module_timings(hook_profile: Dict[str, Any]) -> Dict[str, float]:
+    timings = {}
+    hooked_modules = hook_profile.get("hooked_modules") or {}
+    if "vision_encoder_seconds" in hooked_modules:
+        timings["vision_encoder_seconds"] = float(hook_profile.get("vision_encoder_seconds", 0.0) or 0.0)
+    if "vision_projector_seconds" in hooked_modules:
+        timings["vision_projector_seconds"] = float(hook_profile.get("vision_projector_seconds", 0.0) or 0.0)
+    if (
+        timings.get("vision_encoder_seconds", 0.0) > 0.0
+        and timings.get("vision_projector_seconds", 0.0) > 0.0
+        and timings["vision_encoder_seconds"] >= timings["vision_projector_seconds"]
+    ):
+        timings["vision_encoder_exclusive_seconds"] = (
+            timings["vision_encoder_seconds"] - timings["vision_projector_seconds"]
+        )
+    return timings
+
+
+def _multimodal_prefill_remainder(timings: Dict[str, float]) -> Optional[float]:
+    if "prefill_seconds" not in timings:
+        return None
+    visual_seconds = _timing_value(
+        timings,
+        "vision_encoder_exclusive_seconds"
+        if "vision_encoder_exclusive_seconds" in timings
+        else "vision_encoder_seconds",
+    ) + _timing_value(timings, "vision_projector_seconds")
+    return max(0.0, _timing_value(timings, "prefill_seconds") - visual_seconds)
+
+
+def _get_module_by_path(model: Any, module_path: str) -> Optional[Any]:
+    current = model
+    for part in module_path.split("."):
+        if not hasattr(current, part):
+            return None
+        current = getattr(current, part)
+    return current
+
+
+def _image_sizes(image_inputs: Any) -> List[Dict[str, int]]:
+    images = _as_list(image_inputs)
+    sizes = []
+    for image in images:
+        size = getattr(image, "size", None)
+        if isinstance(size, tuple) and len(size) >= 2:
+            sizes.append({"width": int(size[0]), "height": int(size[1])})
+            continue
+        if isinstance(image, Mapping):
+            width = image.get("width") or image.get("resized_width")
+            height = image.get("height") or image.get("resized_height")
+            if width is not None and height is not None:
+                sizes.append({"width": int(width), "height": int(height)})
+    return sizes
+
+
+def _image_grid_thw(inputs: Any) -> List[List[int]]:
+    grid = _input_value(inputs, "image_grid_thw")
+    if grid is None:
+        return []
+    try:
+        rows = grid.detach().cpu().tolist()
+    except AttributeError:
+        rows = grid
+    result = []
+    for row in rows:
+        if isinstance(row, (list, tuple)) and len(row) >= 3:
+            result.append([int(row[0]), int(row[1]), int(row[2])])
+    return result
+
+
+def _visual_patch_count(inputs: Any, image_grid_thw: List[List[int]], item_index: Optional[int] = None) -> Optional[int]:
+    if image_grid_thw:
+        return int(sum(t * h * w for t, h, w in image_grid_thw))
+    pixel_values = _input_value(inputs, "pixel_values")
+    shape = getattr(pixel_values, "shape", None)
+    if shape is None or len(shape) == 0:
+        return None
+    if item_index is None:
+        return int(shape[0])
+    return None
+
+
+def _visual_token_count(processor: Any, inputs: Any, image_grid_thw: List[List[int]]) -> Optional[int]:
+    if image_grid_thw:
+        merge_size = _processor_merge_size(processor)
+        divisor = max(1, merge_size * merge_size)
+        return int(sum((t * h * w) // divisor for t, h, w in image_grid_thw))
+    image_token_id = _image_token_id(processor)
+    input_ids = _input_value(inputs, "input_ids")
+    if image_token_id is None or input_ids is None:
+        return None
+    try:
+        return int((input_ids == image_token_id).sum().item())
+    except Exception:
+        return None
+
+
+def _processor_merge_size(processor: Any) -> int:
+    image_processor = getattr(processor, "image_processor", None)
+    for name in ("merge_size", "spatial_merge_size"):
+        value = getattr(image_processor, name, None)
+        if value is not None:
+            return int(value)
+    return 2
+
+
+def _image_token_id(processor: Any) -> Optional[int]:
+    tokenizer = _processor_tokenizer(processor)
+    for name in ("image_token_id", "vision_token_id"):
+        value = getattr(tokenizer, name, None)
+        if value is not None:
+            return int(value)
+    token = getattr(tokenizer, "image_token", None)
+    if token is not None and hasattr(tokenizer, "convert_tokens_to_ids"):
+        try:
+            value = tokenizer.convert_tokens_to_ids(token)
+            if value is not None:
+                return int(value)
+        except Exception:
+            return None
+    return None
+
+
+def _input_value(inputs: Any, key: str) -> Any:
+    if isinstance(inputs, Mapping):
+        return inputs.get(key)
+    if hasattr(inputs, key):
+        return getattr(inputs, key)
+    if hasattr(inputs, "get"):
+        return inputs.get(key)
+    return None
+
+
+def _as_list(value: Any) -> List[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, tuple):
+        return list(value)
+    return [value]
+
+
+def _feature_cache_boundary_candidates(stages_ms: Dict[str, Optional[float]]) -> List[Dict[str, str]]:
+    candidates = []
+    if _positive_ms(stages_ms.get("image_resize_normalize_patch_or_token_construction")):
+        candidates.append(
+            {
+                "boundary": "processor outputs",
+                "why": "Caches resized/normalized visual tensors, image_grid_thw and tokenized prompt tensors before device transfer.",
+            }
+        )
+    if _positive_ms(stages_ms.get("vision_encoder_visual_feature_extraction")):
+        candidates.append(
+            {
+                "boundary": "vision encoder outputs",
+                "why": "Caches visual features after the visual tower; useful when screenshots repeat exactly or patch-level reuse is later validated.",
+            }
+        )
+    if _positive_ms(stages_ms.get("visual_feature_projector_adapter")):
+        candidates.append(
+            {
+                "boundary": "projected visual embeddings",
+                "why": "Caches model-ready visual embeddings after projector/adapter, closest to the language prefill boundary.",
+            }
+        )
+    if _positive_ms(stages_ms.get("multimodal_prefill")):
+        candidates.append(
+            {
+                "boundary": "prefill KV cache",
+                "why": "Caches the exact multimodal prefix only when the full prompt and visual embeddings are unchanged.",
+            }
+        )
+    return candidates
+
+
+def _positive_ms(value: Optional[float]) -> bool:
+    return value is not None and value > 0.0
+
+
 def profile_infer_one(
     model: Any,
     processor: Any,
@@ -551,6 +901,8 @@ def profile_infer_one(
     timings["apply_chat_template_seconds"] = time.perf_counter() - stage_started
 
     cache_record: Optional[Dict[str, Any]] = None
+    image_inputs = None
+    video_inputs = None
     if page_cache is not None and page_cache.enabled:
         fingerprint, probe = page_cache.begin_step(image_path, cache_trajectory_id)
         resolved_mode = resolve_visual_token_mode(
@@ -616,27 +968,35 @@ def profile_infer_one(
         raise ValueError(f"Unsupported generation_profile_mode: {generation_profile_mode}")
 
     if generation_profile_mode == "manual_greedy":
-        generated_ids, generation_profile = manual_greedy_generate(
-            model,
-            processor,
-            inputs,
-            max_new_tokens=max_new_tokens,
-            torch=torch,
-            target_device=target_device,
-        )
+        with profile_model_visual_modules(model, torch, target_device) as hook_profile:
+            generated_ids, generation_profile = manual_greedy_generate(
+                model,
+                processor,
+                inputs,
+                max_new_tokens=max_new_tokens,
+                torch=torch,
+                target_device=target_device,
+            )
+        timings.update(_visual_module_timings(hook_profile))
+        generation_profile["visual_module_hooks"] = hook_profile.get("hooked_modules", {})
         timings.update(_manual_generation_timings(generation_profile))
     else:
-        stage_started = time.perf_counter()
-        with torch.inference_mode():
-            generated_ids = model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                **_generation_token_kwargs(processor),
-            )
+        with profile_model_visual_modules(model, torch, target_device) as hook_profile:
+            stage_started = time.perf_counter()
+            with torch.inference_mode():
+                generated_ids = model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    **_generation_token_kwargs(processor),
+                )
         _sync_if_cuda(torch, target_device)
         timings["generate_seconds"] = time.perf_counter() - stage_started
-        generation_profile = {"mode": "generate"}
+        timings.update(_visual_module_timings(hook_profile))
+        generation_profile = {
+            "mode": "generate",
+            "visual_module_hooks": hook_profile.get("hooked_modules", {}),
+        }
 
     stage_started = time.perf_counter()
     generated_ids_trimmed = [
@@ -655,6 +1015,16 @@ def profile_infer_one(
     parsed_action = postprocess_response(raw_response)
     timings["postprocess_seconds"] = time.perf_counter() - stage_started
     timings["total_seconds"] = time.perf_counter() - total_started
+    profile_metadata = build_profile_metadata(
+        processor,
+        image_inputs,
+        inputs,
+        input_tokens,
+        output_tokens=output_tokens,
+    )
+    if cache_record is not None:
+        profile_metadata["processor_cache_hit"] = bool(cache_record.get("processor_cache_hit"))
+    stage_profile = build_stage_profile(timings, profile_metadata)
 
     return GuiProfiledInferenceResult(
         raw_response=raw_response,
@@ -667,6 +1037,8 @@ def profile_infer_one(
         timings=timings,
         memory=gpu_memory_snapshot(),
         generation_profile=generation_profile,
+        profile_metadata=profile_metadata,
+        stage_profile=stage_profile,
     )
 
 
@@ -745,16 +1117,18 @@ def profile_infer_batch(
     _sync_if_cuda(torch, target_device)
     timings["input_to_device_seconds"] = time.perf_counter() - stage_started
 
-    stage_started = time.perf_counter()
-    with torch.inference_mode():
-        generated_ids = model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            **_generation_token_kwargs(processor),
-        )
+    with profile_model_visual_modules(model, torch, target_device) as hook_profile:
+        stage_started = time.perf_counter()
+        with torch.inference_mode():
+            generated_ids = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                **_generation_token_kwargs(processor),
+            )
     _sync_if_cuda(torch, target_device)
     timings["generate_seconds"] = time.perf_counter() - stage_started
+    timings.update(_visual_module_timings(hook_profile))
 
     stage_started = time.perf_counter()
     generated_ids_trimmed = [
@@ -780,8 +1154,20 @@ def profile_infer_batch(
     }
     per_item_latency = timings["generate_seconds"] / len(items)
     memory = gpu_memory_snapshot()
-    return [
-        GuiProfiledInferenceResult(
+    results = []
+    for index, (raw_response, parsed_action, input_token_count, output_token_count, prompt) in enumerate(
+        zip(raw_responses, parsed_actions, input_tokens, output_tokens, prompts)
+    ):
+        profile_metadata = build_profile_metadata(
+            processor,
+            image_inputs,
+            inputs,
+            input_token_count,
+            output_tokens=output_token_count,
+            item_index=index,
+        )
+        stage_profile = build_stage_profile(per_item_timings, profile_metadata)
+        results.append(GuiProfiledInferenceResult(
             raw_response=raw_response,
             parsed_action=parsed_action,
             latency_seconds=per_item_latency,
@@ -790,15 +1176,15 @@ def profile_infer_batch(
             prompt=prompt,
             timings=per_item_timings,
             memory=memory,
-        )
-        for raw_response, parsed_action, input_token_count, output_token_count, prompt in zip(
-            raw_responses,
-            parsed_actions,
-            input_tokens,
-            output_tokens,
-            prompts,
-        )
-    ]
+            generation_profile={
+                "mode": "generate",
+                "visual_module_hooks": hook_profile.get("hooked_modules", {}),
+                "effective_batch_size": len(items),
+            },
+            profile_metadata=profile_metadata,
+            stage_profile=stage_profile,
+        ))
+    return results
 
 
 def mock_infer_one(
@@ -1303,4 +1689,5 @@ def _sync_if_cuda(torch: Any, device: Optional[Any]) -> None:
         return
     device_text = str(device)
     if device_text.startswith("cuda") and torch.cuda.is_available():
-        torch.cuda.synchronize(device)
+        for index in range(torch.cuda.device_count()):
+            torch.cuda.synchronize(index)
