@@ -252,6 +252,36 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
   --run_name androidcontrol_1000_broad_100 \
   --max_pairs 100 \
   --visual_token_mode aggressive_reduce \
+  --feature_boundary vision_final \
+  --page_cache_scope dataset \
+  --page_cache_similarity tile \
+  --page_cache_near_dhash_threshold 8 \
+  --page_cache_near_tile_threshold 0.95 \
+  --page_cache_patch_tile_threshold 0.85 \
+  --page_cache_patch_max_changed_area_ratio 0.35 \
+  --similar_hit_type near \
+  --similar_hit_type patch_candidate \
+  --feature_metric cosine_distance \
+  --feature_threshold 0.005 \
+  --feature_threshold 0.01 \
+  --feature_threshold 0.03 \
+  --feature_threshold 0.05 \
+  --feature_threshold 0.10
+```
+
+Run the same pair set at the model-ready visual embedding boundary after the
+vision merger/projector:
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_1000/test.json \
+  --data_dir data/androidcontrol_1000 \
+  --output_dir results/feature_locality_analysis \
+  --run_name androidcontrol_1000_broad_100_model_ready_visual \
+  --max_pairs 100 \
+  --visual_token_mode aggressive_reduce \
+  --feature_boundary model_ready_visual \
   --page_cache_scope dataset \
   --page_cache_similarity tile \
   --page_cache_near_dhash_threshold 8 \
@@ -271,8 +301,13 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
 The locality script writes `summary.json`, `per_pair.jsonl`,
 `per_pair_summary.csv`, `threshold_stats.csv`, `grouped_stats.csv`,
 `distance_profiles.csv`, and optional plots under the selected output
-directory.  See `docs/2026-09-06_visual_feature_locality_analysis.md` for the
-current 100-pair result interpretation.
+directory.  The current 100-pair results show strong patch-level locality at
+`feature_boundary=vision_final` with `tau=0.01`.  At
+`feature_boundary=model_ready_visual`, the script captures `model.visual.merger`
+outputs, usually `377` tokens on a `[29,13]` grid; locality remains visible, but
+the distance scale is larger and `tau=0.05` is the better main threshold
+candidate.  See `docs/2026-09-06_visual_feature_locality_analysis.md` for the
+full interpretation.
 
 ## Acceleration Experiments
 

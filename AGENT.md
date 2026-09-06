@@ -303,17 +303,23 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
 
 Visual Feature Locality 当前结果：
 
-- 结果目录：`results/feature_locality_analysis/androidcontrol_1000_broad_100`。
+- patch-level 结果目录：`results/feature_locality_analysis/androidcontrol_1000_broad_100`。
+- model-ready 结果目录：`results/feature_locality_analysis/androidcontrol_1000_broad_100_model_ready_visual`。
 - 数据：`data/androidcontrol_1000/test.json`，`max_pairs=100`，`page_cache_scope=dataset`，`visual_token_mode=aggressive_reduce`。
-- 100 个 pair 全部有效，`error_count=0`；feature source 自动解析为 `model.visual`。
+- 两轮 100 个 pair 均全部有效，`error_count=0`。
+- patch-level feature source 自动解析为 `model.visual`；多数 `feature_token_count=1508`，少数为 `1568`；多数 token grid 为 `[58,26]`。
+- model-ready feature source 自动解析为 `model.visual.merger`；多数 `feature_token_count=377`，少数为 `392`；多数 token grid 为 `[29,13]`；`processor_merge_size=2`；`alignment_method=tile_mask_center_sample_to_merged_visual_token_grid`。
 - hit type：`patch_candidate=55`，`near=45`。
 - 平均 `R_pixel=0.0611`，median `0.0547`，p90 `0.1180`。
-- `tau=0.01` 下平均 `R_feature=0.0205`，median `0.0146`，p90 `0.0513`；`R_pixel` 与 `R_feature` Pearson correlation 为 `0.667`。
-- `tau=0.01` 下仅 `2 / 100` 个 pair 出现 `R_feature > R_pixel`；`tau>=0.03` 下为 `0 / 100`。
-- changed pixel patch tokens 的 mean cosine distance 为 `0.002154`，unchanged pixel patch tokens 为 `0.000753`，约 `2.86x`；`79 / 100` 个 pair 的 changed 区域 feature mean 高于 unchanged 区域。
-- 距 changed region 的空间距离越远，feature distance 总体下降；未观察到大面积 feature 扩散。
-- 当前结论：100-pair 结果支持 Patch Feature Cache 可行性，建议把 `tau=0.01` 作为主观察阈值之一。
-- 当前限制：只分析 `model.visual` final 输出；多数 `feature_token_count=1508`，而 merged visual token 估算为 `377`，尚未确认 projector / merger 后 model-ready visual embeddings 的 locality；尚未比较 intermediate layers。
+- patch-level `tau=0.01` 下平均 `R_feature=0.0205`，median `0.0146`，p90 `0.0513`；`R_pixel` 与 `R_feature` Pearson correlation 为 `0.667`。
+- patch-level `tau=0.01` 下仅 `2 / 100` 个 pair 出现 `R_feature > R_pixel`；`tau>=0.03` 下为 `0 / 100`。
+- patch-level changed pixel patch tokens 的 mean cosine distance 为 `0.002154`，unchanged pixel patch tokens 为 `0.000753`，约 `2.86x`；`79 / 100` 个 pair 的 changed 区域 feature mean 高于 unchanged 区域。
+- model-ready `tau=0.01` 下平均 `R_feature=0.1171`，`84 / 100` 个 pair 出现 `R_feature > R_pixel`，说明 patch-level 阈值不能直接迁移。
+- model-ready `tau=0.05` 下平均 `R_feature=0.0602`，接近平均 `R_pixel=0.0611`；按 page similarity 分段也基本匹配，推荐作为 model-ready 主观察阈值候选。
+- model-ready changed region mean cosine distance 为 `0.04887`，unchanged region 为 `0.00738`，约 `6.62x`；`100 / 100` 个 pair 的 changed 区域 feature mean 高于 unchanged 区域。
+- 距 changed region 的空间距离越远，patch-level 和 model-ready feature distance 总体均下降。
+- 当前结论：patch-level feature locality 强，支持 Patch Feature Cache 可行性；model-ready visual embeddings 仍有明显局部性，但距离尺度更大，建议用 `tau=0.05` / `0.10` 重新标定。
+- 当前限制：尚未实现真实 feature cache；model-ready locality 不等价于 full-prefix KV cache，near/patch 页面不应直接局部替换 KV；尚未比较 intermediate layers。
 
 `--generation_profile_mode manual_greedy` 已用于暴露 `prefill_seconds`、`ttft_seconds`、逐 token decode 统计和 multimodal prefill 占比。该路径只用于 profiling/实验，当前限制：
 
@@ -349,6 +355,35 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
   --run_name androidcontrol_1000_broad_100 \
   --max_pairs 100 \
   --visual_token_mode aggressive_reduce \
+  --feature_boundary vision_final \
+  --page_cache_scope dataset \
+  --page_cache_similarity tile \
+  --page_cache_near_dhash_threshold 8 \
+  --page_cache_near_tile_threshold 0.95 \
+  --page_cache_patch_tile_threshold 0.85 \
+  --page_cache_patch_max_changed_area_ratio 0.35 \
+  --similar_hit_type near \
+  --similar_hit_type patch_candidate \
+  --feature_metric cosine_distance \
+  --feature_threshold 0.005 \
+  --feature_threshold 0.01 \
+  --feature_threshold 0.03 \
+  --feature_threshold 0.05 \
+  --feature_threshold 0.10
+```
+
+Model-ready visual embeddings 复现实验命令：
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_1000/test.json \
+  --data_dir data/androidcontrol_1000 \
+  --output_dir results/feature_locality_analysis \
+  --run_name androidcontrol_1000_broad_100_model_ready_visual \
+  --max_pairs 100 \
+  --visual_token_mode aggressive_reduce \
+  --feature_boundary model_ready_visual \
   --page_cache_scope dataset \
   --page_cache_similarity tile \
   --page_cache_near_dhash_threshold 8 \

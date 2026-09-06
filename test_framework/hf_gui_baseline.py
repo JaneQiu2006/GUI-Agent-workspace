@@ -151,6 +151,33 @@ class VisualFeatureExtractionResult:
     profile_metadata: Dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class VisualTokenPositionInfo:
+    image_token_id: Optional[int]
+    visual_token_positions: List[int]
+    text_token_positions: List[int]
+    full_prefix_positions: List[int]
+    visual_token_span: Optional[Tuple[int, int]]
+    visual_position_source: str
+
+
+@dataclass
+class PrefillKVExtractionResult:
+    past_key_values: Any
+    kv_boundary: str
+    prompt: str
+    input_tokens: int
+    input_ids: Any
+    visual_token_positions: List[int]
+    text_token_positions: List[int]
+    full_prefix_positions: List[int]
+    visual_token_span: Optional[Tuple[int, int]]
+    visual_position_source: str
+    image_token_id: Optional[int]
+    profile_metadata: Dict[str, Any] = field(default_factory=dict)
+    kv_shapes: List[Dict[str, Any]] = field(default_factory=list)
+
+
 def build_gui_messages(
     image_path: Path,
     instruction: str,
@@ -515,6 +542,144 @@ def extract_visual_features(
         prompt=prompt,
         input_tokens=input_tokens,
         profile_metadata=metadata,
+    )
+
+
+def extract_prefill_past_key_values(
+    model: Any,
+    processor: Any,
+    image_path: Path,
+    instruction: str = "",
+    device: str = "auto",
+    history: Optional[List[Dict[str, Any]]] = None,
+    low_level: Optional[Any] = None,
+    visual_token_mode: str = "default",
+    min_pixels: Optional[int] = None,
+    max_pixels: Optional[int] = None,
+    action_hint: Optional[str] = None,
+    detach_to_cpu: bool = True,
+) -> PrefillKVExtractionResult:
+    """Run a profiling-only multimodal prefill and return prefix KV states.
+
+    This does not call generate(), does not decode tokens, and does not mutate
+    weights.  It is intended for KV cache locality analysis only.
+    """
+    import torch
+
+    messages, prompt = build_gui_messages(
+        image_path,
+        instruction,
+        history,
+        low_level,
+        visual_token_mode=visual_token_mode,
+        min_pixels=min_pixels,
+        max_pixels=max_pixels,
+        action_hint=action_hint,
+    )
+    chat_text = apply_chat_template_without_thinking(processor, messages)
+    image_inputs, video_inputs = _process_vision_info(messages)
+    inputs = processor(
+        text=[chat_text],
+        images=image_inputs,
+        videos=video_inputs,
+        padding=True,
+        return_tensors="pt",
+    )
+    input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
+    position_info = infer_visual_token_positions(processor, inputs)
+
+    target_device = _input_device(model, device)
+    if hasattr(inputs, "to") and target_device is not None:
+        inputs = inputs.to(target_device)
+    input_dict = _as_input_dict(inputs)
+
+    _sync_if_cuda(torch, target_device)
+    with torch.inference_mode():
+        outputs = _model_forward(
+            model,
+            {
+                **input_dict,
+                "use_cache": True,
+                "return_dict": True,
+            },
+        )
+    _sync_if_cuda(torch, target_device)
+    past_key_values = getattr(outputs, "past_key_values", None)
+    if past_key_values is None:
+        raise RuntimeError("Prefill forward did not return past_key_values")
+    if detach_to_cpu:
+        past_key_values = _detach_past_key_values_to_cpu(past_key_values)
+
+    metadata = build_profile_metadata(
+        processor,
+        image_inputs,
+        inputs,
+        input_tokens,
+        output_tokens=None,
+    )
+    metadata["processor_merge_size"] = _processor_merge_size(processor)
+    metadata["kv_boundary"] = "prefill_past_key_values"
+    metadata["visual_position_source"] = position_info.visual_position_source
+    metadata["image_token_id"] = position_info.image_token_id
+    metadata["visual_token_position_count"] = len(position_info.visual_token_positions)
+    metadata["text_token_position_count"] = len(position_info.text_token_positions)
+
+    input_ids = _input_value(inputs, "input_ids")
+    if hasattr(input_ids, "detach"):
+        input_ids = input_ids.detach().cpu()
+    return PrefillKVExtractionResult(
+        past_key_values=past_key_values,
+        kv_boundary="prefill_past_key_values",
+        prompt=prompt,
+        input_tokens=input_tokens,
+        input_ids=input_ids,
+        visual_token_positions=position_info.visual_token_positions,
+        text_token_positions=position_info.text_token_positions,
+        full_prefix_positions=position_info.full_prefix_positions,
+        visual_token_span=position_info.visual_token_span,
+        visual_position_source=position_info.visual_position_source,
+        image_token_id=position_info.image_token_id,
+        profile_metadata=metadata,
+        kv_shapes=_past_key_values_shapes(past_key_values),
+    )
+
+
+def infer_visual_token_positions(processor: Any, inputs: Any) -> VisualTokenPositionInfo:
+    """Infer visual placeholder positions from input_ids and tokenizer metadata."""
+    image_token_id = _image_token_id(processor)
+    input_ids = _input_value(inputs, "input_ids")
+    if image_token_id is None:
+        raise RuntimeError("Cannot infer visual token positions: tokenizer has no image_token_id/vision_token_id")
+    ids = _first_batch_token_list(input_ids, "input_ids")
+    attention_mask = _input_value(inputs, "attention_mask")
+    if attention_mask is None:
+        full_positions = list(range(len(ids)))
+    else:
+        mask = _first_batch_token_list(attention_mask, "attention_mask")
+        full_positions = [index for index, value in enumerate(mask[: len(ids)]) if int(value) != 0]
+    full_set = set(full_positions)
+    visual_positions = [
+        index
+        for index, token_id in enumerate(ids)
+        if index in full_set and int(token_id) == int(image_token_id)
+    ]
+    if not visual_positions:
+        raise RuntimeError(
+            f"Cannot infer visual token positions: image_token_id={image_token_id} not found in active input_ids"
+        )
+    visual_set = set(visual_positions)
+    text_positions = [index for index in full_positions if index not in visual_set]
+    span = _contiguous_span(visual_positions)
+    source = "input_ids_image_token_id"
+    if span is None:
+        source = "input_ids_image_token_id_noncontiguous"
+    return VisualTokenPositionInfo(
+        image_token_id=image_token_id,
+        visual_token_positions=visual_positions,
+        text_token_positions=text_positions,
+        full_prefix_positions=full_positions,
+        visual_token_span=span,
+        visual_position_source=source,
     )
 
 
@@ -1129,6 +1294,106 @@ def _image_token_id(processor: Any) -> Optional[int]:
         except Exception:
             return None
     return None
+
+
+def _first_batch_token_list(value: Any, name: str) -> List[int]:
+    if value is None:
+        raise RuntimeError(f"Cannot read {name}: value is missing")
+    try:
+        if hasattr(value, "detach"):
+            value = value.detach().cpu()
+        if hasattr(value, "tolist"):
+            value = value.tolist()
+    except Exception:
+        pass
+    if isinstance(value, tuple):
+        value = list(value)
+    if isinstance(value, list) and value and isinstance(value[0], (list, tuple)):
+        if len(value) != 1:
+            raise RuntimeError(f"{name} must have batch_size=1 for KV locality analysis, got {len(value)}")
+        value = list(value[0])
+    if not isinstance(value, list):
+        raise RuntimeError(f"Cannot read {name}: unsupported value type {type(value).__name__}")
+    return [int(item) for item in value]
+
+
+def _contiguous_span(positions: Sequence[int]) -> Optional[Tuple[int, int]]:
+    if not positions:
+        return None
+    ordered = sorted(int(position) for position in positions)
+    expected = list(range(ordered[0], ordered[-1] + 1))
+    if ordered != expected:
+        return None
+    return ordered[0], ordered[-1] + 1
+
+
+def _detach_past_key_values_to_cpu(past_key_values: Any) -> Any:
+    if hasattr(past_key_values, "to_legacy_cache"):
+        try:
+            past_key_values = past_key_values.to_legacy_cache()
+        except Exception:
+            pass
+    if not isinstance(past_key_values, (list, tuple)):
+        return past_key_values
+    detached_layers = []
+    for layer in past_key_values:
+        if isinstance(layer, Mapping):
+            key = layer.get("key") if layer.get("key") is not None else layer.get("k")
+            value = layer.get("value") if layer.get("value") is not None else layer.get("v")
+            key = _detach_tensor_to_cpu(key)
+            value = _detach_tensor_to_cpu(value)
+            detached_layers.append({"key": key, "value": value})
+            continue
+        if isinstance(layer, (list, tuple)) and len(layer) >= 2:
+            detached_layers.append((
+                _detach_tensor_to_cpu(layer[0]),
+                _detach_tensor_to_cpu(layer[1]),
+            ))
+            continue
+        detached_layers.append(layer)
+    return tuple(detached_layers)
+
+
+def _detach_tensor_to_cpu(value: Any) -> Any:
+    if hasattr(value, "detach"):
+        value = value.detach()
+    if hasattr(value, "cpu"):
+        return value.cpu()
+    return value
+
+
+def _past_key_values_shapes(past_key_values: Any) -> List[Dict[str, Any]]:
+    layers = past_key_values
+    if hasattr(layers, "to_legacy_cache"):
+        try:
+            layers = layers.to_legacy_cache()
+        except Exception:
+            pass
+    if not isinstance(layers, (list, tuple)):
+        return []
+    result = []
+    for layer_id, layer in enumerate(layers):
+        key = value = None
+        if isinstance(layer, Mapping):
+            key = layer.get("key") if layer.get("key") is not None else layer.get("k")
+            value = layer.get("value") if layer.get("value") is not None else layer.get("v")
+        elif isinstance(layer, (list, tuple)) and len(layer) >= 2:
+            key, value = layer[0], layer[1]
+        result.append(
+            {
+                "layer_id": layer_id,
+                "key_shape": _shape_list(key),
+                "value_shape": _shape_list(value),
+            }
+        )
+    return result
+
+
+def _shape_list(value: Any) -> Optional[List[int]]:
+    shape = getattr(value, "shape", None)
+    if shape is None:
+        return None
+    return [int(dim) for dim in shape]
 
 
 def _input_value(inputs: Any, key: str) -> Any:
