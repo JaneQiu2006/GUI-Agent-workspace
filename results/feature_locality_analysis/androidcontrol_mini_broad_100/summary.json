@@ -1,0 +1,1717 @@
+{
+  "config": {
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "test_json": "data/androidcontrol_mini/test.json",
+    "data_dir": "data/androidcontrol_mini",
+    "prev_image": null,
+    "cur_image": null,
+    "instruction": "Analyze the GUI screenshot.",
+    "output_dir": "results/feature_locality_analysis/androidcontrol_mini_broad_100",
+    "limit": null,
+    "max_pairs": 100,
+    "device": "auto",
+    "device_map": "auto",
+    "dtype": "auto",
+    "attn_implementation": null,
+    "visual_token_mode": "aggressive_reduce",
+    "min_pixels": null,
+    "max_pixels": null,
+    "feature_metric": "cosine_distance",
+    "feature_thresholds": [
+      0.005,
+      0.01,
+      0.03,
+      0.05,
+      0.1
+    ],
+    "feature_layers": [
+      "final"
+    ],
+    "vision_module_path": null,
+    "page_cache_config": {
+      "mode": "observe",
+      "scope": "dataset",
+      "similarity": "tile",
+      "max_entries": 1,
+      "near_dhash_threshold": 8,
+      "patch_tile_threshold": 0.85,
+      "patch_max_changed_area_ratio": 0.35,
+      "patch_critical_regions": [],
+      "near_tile_threshold": 0.95,
+      "tile_rows": 8,
+      "tile_cols": 16,
+      "ignored_top_ratio": 0.0,
+      "ignored_bottom_ratio": 0.0,
+      "identity": "visual-feature-locality"
+    },
+    "similar_hit_types": [
+      "near",
+      "patch_candidate"
+    ],
+    "created_at": "2026-09-05T20:32:10.079218+00:00"
+  },
+  "summary": {
+    "pair_layer_rows": 1,
+    "valid_pair_layer_rows": 1,
+    "error_count": 0,
+    "r_pixel_distribution": {
+      "count": 1,
+      "mean": 0.0078125,
+      "median": 0.0078125,
+      "p90": 0.0078125,
+      "min": 0.0078125,
+      "max": 0.0078125,
+      "std": 0.0
+    },
+    "r_feature_by_threshold": {
+      "0.005": {
+        "count": 1,
+        "mean": 0.013925729442970823,
+        "median": 0.013925729442970823,
+        "p90": 0.013925729442970823,
+        "min": 0.013925729442970823,
+        "max": 0.013925729442970823,
+        "std": 0.0
+      },
+      "0.01": {
+        "count": 1,
+        "mean": 0.010610079575596816,
+        "median": 0.010610079575596816,
+        "p90": 0.010610079575596816,
+        "min": 0.010610079575596816,
+        "max": 0.010610079575596816,
+        "std": 0.0
+      },
+      "0.03": {
+        "count": 1,
+        "mean": 0.002652519893899204,
+        "median": 0.002652519893899204,
+        "p90": 0.002652519893899204,
+        "min": 0.002652519893899204,
+        "max": 0.002652519893899204,
+        "std": 0.0
+      },
+      "0.05": {
+        "count": 1,
+        "mean": 0.002652519893899204,
+        "median": 0.002652519893899204,
+        "p90": 0.002652519893899204,
+        "min": 0.002652519893899204,
+        "max": 0.002652519893899204,
+        "std": 0.0
+      },
+      "0.1": {
+        "count": 1,
+        "mean": 0.0,
+        "median": 0.0,
+        "p90": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "std": 0.0
+      }
+    },
+    "r_pixel_r_feature_correlation_by_threshold": {
+      "0.005": null,
+      "0.01": null,
+      "0.03": null,
+      "0.05": null,
+      "0.1": null
+    },
+    "by_page_similarity_bin": [
+      {
+        "dimension": "page_similarity_bin",
+        "value": "[0.90,0.95]",
+        "layer_id": null,
+        "threshold": null,
+        "feature_metric": null,
+        "pair_count": 0,
+        "pixel_changed_ratio": {
+          "count": 0
+        },
+        "feature_changed_ratio": {
+          "count": 0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "page_similarity_bin",
+        "value": "[0.95,0.98]",
+        "layer_id": null,
+        "threshold": null,
+        "feature_metric": null,
+        "pair_count": 0,
+        "pixel_changed_ratio": {
+          "count": 0
+        },
+        "feature_changed_ratio": {
+          "count": 0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "page_similarity_bin",
+        "value": "[0.98,0.99]",
+        "layer_id": null,
+        "threshold": null,
+        "feature_metric": null,
+        "pair_count": 0,
+        "pixel_changed_ratio": {
+          "count": 0
+        },
+        "feature_changed_ratio": {
+          "count": 0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "page_similarity_bin",
+        "value": "[0.99,1.00]",
+        "layer_id": null,
+        "threshold": null,
+        "feature_metric": "cosine_distance",
+        "pair_count": 5,
+        "pixel_changed_ratio": {
+          "count": 5,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 5,
+          "mean": 0.005968169761273209,
+          "median": 0.002652519893899204,
+          "p90": 0.012599469496021221,
+          "min": 0.0,
+          "max": 0.013925729442970823,
+          "std": 0.005338093314986235
+        },
+        "correlation": null
+      }
+    ],
+    "grouped_stats": [
+      {
+        "dimension": "app",
+        "value": "unknown",
+        "layer_id": "final",
+        "threshold": "0.005",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.013925729442970823,
+          "median": 0.013925729442970823,
+          "p90": 0.013925729442970823,
+          "min": 0.013925729442970823,
+          "max": 0.013925729442970823,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "app",
+        "value": "unknown",
+        "layer_id": "final",
+        "threshold": "0.01",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.010610079575596816,
+          "median": 0.010610079575596816,
+          "p90": 0.010610079575596816,
+          "min": 0.010610079575596816,
+          "max": 0.010610079575596816,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "app",
+        "value": "unknown",
+        "layer_id": "final",
+        "threshold": "0.03",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "app",
+        "value": "unknown",
+        "layer_id": "final",
+        "threshold": "0.05",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "app",
+        "value": "unknown",
+        "layer_id": "final",
+        "threshold": "0.1",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.0,
+          "median": 0.0,
+          "p90": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "task",
+        "value": " I want to view the recipe for Welsh Cakes in the kitchen stories app.",
+        "layer_id": "final",
+        "threshold": "0.005",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.013925729442970823,
+          "median": 0.013925729442970823,
+          "p90": 0.013925729442970823,
+          "min": 0.013925729442970823,
+          "max": 0.013925729442970823,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "task",
+        "value": " I want to view the recipe for Welsh Cakes in the kitchen stories app.",
+        "layer_id": "final",
+        "threshold": "0.01",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.010610079575596816,
+          "median": 0.010610079575596816,
+          "p90": 0.010610079575596816,
+          "min": 0.010610079575596816,
+          "max": 0.010610079575596816,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "task",
+        "value": " I want to view the recipe for Welsh Cakes in the kitchen stories app.",
+        "layer_id": "final",
+        "threshold": "0.03",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "task",
+        "value": " I want to view the recipe for Welsh Cakes in the kitchen stories app.",
+        "layer_id": "final",
+        "threshold": "0.05",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "task",
+        "value": " I want to view the recipe for Welsh Cakes in the kitchen stories app.",
+        "layer_id": "final",
+        "threshold": "0.1",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.0,
+          "median": 0.0,
+          "p90": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "episode_id",
+        "value": "60",
+        "layer_id": "final",
+        "threshold": "0.005",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.013925729442970823,
+          "median": 0.013925729442970823,
+          "p90": 0.013925729442970823,
+          "min": 0.013925729442970823,
+          "max": 0.013925729442970823,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "episode_id",
+        "value": "60",
+        "layer_id": "final",
+        "threshold": "0.01",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.010610079575596816,
+          "median": 0.010610079575596816,
+          "p90": 0.010610079575596816,
+          "min": 0.010610079575596816,
+          "max": 0.010610079575596816,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "episode_id",
+        "value": "60",
+        "layer_id": "final",
+        "threshold": "0.03",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "episode_id",
+        "value": "60",
+        "layer_id": "final",
+        "threshold": "0.05",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "episode_id",
+        "value": "60",
+        "layer_id": "final",
+        "threshold": "0.1",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.0,
+          "median": 0.0,
+          "p90": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "std": 0.0
+        },
+        "correlation": null
+      }
+    ],
+    "by_layer": [
+      {
+        "dimension": "layer_id",
+        "value": "final",
+        "layer_id": "final",
+        "threshold": "0.005",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.013925729442970823,
+          "median": 0.013925729442970823,
+          "p90": 0.013925729442970823,
+          "min": 0.013925729442970823,
+          "max": 0.013925729442970823,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "layer_id",
+        "value": "final",
+        "layer_id": "final",
+        "threshold": "0.01",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.010610079575596816,
+          "median": 0.010610079575596816,
+          "p90": 0.010610079575596816,
+          "min": 0.010610079575596816,
+          "max": 0.010610079575596816,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "layer_id",
+        "value": "final",
+        "layer_id": "final",
+        "threshold": "0.03",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "layer_id",
+        "value": "final",
+        "layer_id": "final",
+        "threshold": "0.05",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.002652519893899204,
+          "median": 0.002652519893899204,
+          "p90": 0.002652519893899204,
+          "min": 0.002652519893899204,
+          "max": 0.002652519893899204,
+          "std": 0.0
+        },
+        "correlation": null
+      },
+      {
+        "dimension": "layer_id",
+        "value": "final",
+        "layer_id": "final",
+        "threshold": "0.1",
+        "feature_metric": "cosine_distance",
+        "pair_count": 1,
+        "pixel_changed_ratio": {
+          "count": 1,
+          "mean": 0.0078125,
+          "median": 0.0078125,
+          "p90": 0.0078125,
+          "min": 0.0078125,
+          "max": 0.0078125,
+          "std": 0.0
+        },
+        "feature_changed_ratio": {
+          "count": 1,
+          "mean": 0.0,
+          "median": 0.0,
+          "p90": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "std": 0.0
+        },
+        "correlation": null
+      }
+    ],
+    "distance_to_changed_region": [
+      {
+        "token_manhattan_distance": 0,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0014713406562805176,
+          "median": 0.0014713406562805176,
+          "p90": 0.0014713406562805176,
+          "min": 0.0014713406562805176,
+          "max": 0.0014713406562805176,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 1,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 8.37246576944987e-05,
+          "median": 8.37246576944987e-05,
+          "p90": 8.37246576944987e-05,
+          "min": 8.37246576944987e-05,
+          "max": 8.37246576944987e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 2,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0003817607374752269,
+          "median": 0.0003817607374752269,
+          "p90": 0.0003817607374752269,
+          "min": 0.0003817607374752269,
+          "max": 0.0003817607374752269,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 3,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 8.86979855989155e-05,
+          "median": 8.86979855989155e-05,
+          "p90": 8.86979855989155e-05,
+          "min": 8.86979855989155e-05,
+          "max": 8.86979855989155e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 4,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0008380271139599028,
+          "median": 0.0008380271139599028,
+          "p90": 0.0008380271139599028,
+          "min": 0.0008380271139599028,
+          "max": 0.0008380271139599028,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 5,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 8.46671021502951e-05,
+          "median": 8.46671021502951e-05,
+          "p90": 8.46671021502951e-05,
+          "min": 8.46671021502951e-05,
+          "max": 8.46671021502951e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 6,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0011466277970208062,
+          "median": 0.0011466277970208062,
+          "p90": 0.0011466277970208062,
+          "min": 0.0011466277970208062,
+          "max": 0.0011466277970208062,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 7,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.001659393310546875,
+          "median": 0.001659393310546875,
+          "p90": 0.001659393310546875,
+          "min": 0.001659393310546875,
+          "max": 0.001659393310546875,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 8,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.004898402094841004,
+          "median": 0.004898402094841004,
+          "p90": 0.004898402094841004,
+          "min": 0.004898402094841004,
+          "max": 0.004898402094841004,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 9,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0033227971621922086,
+          "median": 0.0033227971621922086,
+          "p90": 0.0033227971621922086,
+          "min": 0.0033227971621922086,
+          "max": 0.0033227971621922086,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 10,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0007233430038798939,
+          "median": 0.0007233430038798939,
+          "p90": 0.0007233430038798939,
+          "min": 0.0007233430038798939,
+          "max": 0.0007233430038798939,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 11,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0009569085162618886,
+          "median": 0.0009569085162618886,
+          "p90": 0.0009569085162618886,
+          "min": 0.0009569085162618886,
+          "max": 0.0009569085162618886,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 12,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.00011363873879114787,
+          "median": 0.00011363873879114787,
+          "p90": 0.00011363873879114787,
+          "min": 0.00011363873879114787,
+          "max": 0.00011363873879114787,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 13,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.003720259666442871,
+          "median": 0.003720259666442871,
+          "p90": 0.003720259666442871,
+          "min": 0.003720259666442871,
+          "max": 0.003720259666442871,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 14,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0004741526567018949,
+          "median": 0.0004741526567018949,
+          "p90": 0.0004741526567018949,
+          "min": 0.0004741526567018949,
+          "max": 0.0004741526567018949,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 15,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.633863025241428e-05,
+          "median": 2.633863025241428e-05,
+          "p90": 2.633863025241428e-05,
+          "min": 2.633863025241428e-05,
+          "max": 2.633863025241428e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 16,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 9.125896862574986e-06,
+          "median": 9.125896862574986e-06,
+          "p90": 9.125896862574986e-06,
+          "min": 9.125896862574986e-06,
+          "max": 9.125896862574986e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 17,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0007668281423634496,
+          "median": 0.0007668281423634496,
+          "p90": 0.0007668281423634496,
+          "min": 0.0007668281423634496,
+          "max": 0.0007668281423634496,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 18,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.00018280943234761556,
+          "median": 0.00018280943234761556,
+          "p90": 0.00018280943234761556,
+          "min": 0.00018280943234761556,
+          "max": 0.00018280943234761556,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 19,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0020107626914978027,
+          "median": 0.0020107626914978027,
+          "p90": 0.0020107626914978027,
+          "min": 0.0020107626914978027,
+          "max": 0.0020107626914978027,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 20,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.00025482289493083954,
+          "median": 0.00025482289493083954,
+          "p90": 0.00025482289493083954,
+          "min": 0.00025482289493083954,
+          "max": 0.00025482289493083954,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 21,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 4.154672989478478e-05,
+          "median": 4.154672989478478e-05,
+          "p90": 4.154672989478478e-05,
+          "min": 4.154672989478478e-05,
+          "max": 4.154672989478478e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 22,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.1755695343017578e-05,
+          "median": 2.1755695343017578e-05,
+          "p90": 2.1755695343017578e-05,
+          "min": 2.1755695343017578e-05,
+          "max": 2.1755695343017578e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 23,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0008802459790156438,
+          "median": 0.0008802459790156438,
+          "p90": 0.0008802459790156438,
+          "min": 0.0008802459790156438,
+          "max": 0.0008802459790156438,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 24,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0010966245944683368,
+          "median": 0.0010966245944683368,
+          "p90": 0.0010966245944683368,
+          "min": 0.0010966245944683368,
+          "max": 0.0010966245944683368,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 25,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.308762990511381e-05,
+          "median": 2.308762990511381e-05,
+          "p90": 2.308762990511381e-05,
+          "min": 2.308762990511381e-05,
+          "max": 2.308762990511381e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 26,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.7936238508958082e-05,
+          "median": 2.7936238508958082e-05,
+          "p90": 2.7936238508958082e-05,
+          "min": 2.7936238508958082e-05,
+          "max": 2.7936238508958082e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 27,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.001303406862112192,
+          "median": 0.001303406862112192,
+          "p90": 0.001303406862112192,
+          "min": 0.001303406862112192,
+          "max": 0.001303406862112192,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 28,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.0010022475169255184,
+          "median": 0.0010022475169255184,
+          "p90": 0.0010022475169255184,
+          "min": 0.0010022475169255184,
+          "max": 0.0010022475169255184,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 29,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 0.00026010779234079213,
+          "median": 0.00026010779234079213,
+          "p90": 0.00026010779234079213,
+          "min": 0.00026010779234079213,
+          "max": 0.00026010779234079213,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 30,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.0465200130756084e-05,
+          "median": 1.0465200130756084e-05,
+          "p90": 1.0465200130756084e-05,
+          "min": 1.0465200130756084e-05,
+          "max": 1.0465200130756084e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 31,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.95617859180157e-05,
+          "median": 1.95617859180157e-05,
+          "p90": 1.95617859180157e-05,
+          "min": 1.95617859180157e-05,
+          "max": 1.95617859180157e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 32,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.8358230590820312e-05,
+          "median": 1.8358230590820312e-05,
+          "p90": 1.8358230590820312e-05,
+          "min": 1.8358230590820312e-05,
+          "max": 1.8358230590820312e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 33,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.564375217144306e-05,
+          "median": 2.564375217144306e-05,
+          "p90": 2.564375217144306e-05,
+          "min": 2.564375217144306e-05,
+          "max": 2.564375217144306e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 34,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.1757987829355094e-05,
+          "median": 2.1757987829355094e-05,
+          "p90": 2.1757987829355094e-05,
+          "min": 2.1757987829355094e-05,
+          "max": 2.1757987829355094e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 35,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.6579261192908653e-05,
+          "median": 1.6579261192908653e-05,
+          "p90": 1.6579261192908653e-05,
+          "min": 1.6579261192908653e-05,
+          "max": 1.6579261192908653e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 36,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.6535703952495867e-05,
+          "median": 1.6535703952495867e-05,
+          "p90": 1.6535703952495867e-05,
+          "min": 1.6535703952495867e-05,
+          "max": 1.6535703952495867e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 37,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.2248754501342773e-05,
+          "median": 1.2248754501342773e-05,
+          "p90": 1.2248754501342773e-05,
+          "min": 1.2248754501342773e-05,
+          "max": 1.2248754501342773e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 38,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.9587003267728367e-05,
+          "median": 1.9587003267728367e-05,
+          "p90": 1.9587003267728367e-05,
+          "min": 1.9587003267728367e-05,
+          "max": 1.9587003267728367e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 39,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 5.540939477773813e-05,
+          "median": 5.540939477773813e-05,
+          "p90": 5.540939477773813e-05,
+          "min": 5.540939477773813e-05,
+          "max": 5.540939477773813e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 40,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.3275788380549504e-05,
+          "median": 1.3275788380549504e-05,
+          "p90": 1.3275788380549504e-05,
+          "min": 1.3275788380549504e-05,
+          "max": 1.3275788380549504e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 41,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.2819583599384014e-05,
+          "median": 1.2819583599384014e-05,
+          "p90": 1.2819583599384014e-05,
+          "min": 1.2819583599384014e-05,
+          "max": 1.2819583599384014e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 42,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 4.667502183180589e-06,
+          "median": 4.667502183180589e-06,
+          "p90": 4.667502183180589e-06,
+          "min": 4.667502183180589e-06,
+          "max": 4.667502183180589e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 43,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 5.742678275475135e-06,
+          "median": 5.742678275475135e-06,
+          "p90": 5.742678275475135e-06,
+          "min": 5.742678275475135e-06,
+          "max": 5.742678275475135e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 44,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 6.65738032414363e-06,
+          "median": 6.65738032414363e-06,
+          "p90": 6.65738032414363e-06,
+          "min": 6.65738032414363e-06,
+          "max": 6.65738032414363e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 45,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 9.213502590472881e-06,
+          "median": 9.213502590472881e-06,
+          "p90": 9.213502590472881e-06,
+          "min": 9.213502590472881e-06,
+          "max": 9.213502590472881e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 46,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.2920452998234676e-05,
+          "median": 1.2920452998234676e-05,
+          "p90": 1.2920452998234676e-05,
+          "min": 1.2920452998234676e-05,
+          "max": 1.2920452998234676e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 47,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 6.492321307842548e-06,
+          "median": 6.492321307842548e-06,
+          "p90": 6.492321307842548e-06,
+          "min": 6.492321307842548e-06,
+          "max": 6.492321307842548e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 48,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 6.3478946685791016e-06,
+          "median": 6.3478946685791016e-06,
+          "p90": 6.3478946685791016e-06,
+          "min": 6.3478946685791016e-06,
+          "max": 6.3478946685791016e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 49,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 7.4666280012864336e-06,
+          "median": 7.4666280012864336e-06,
+          "p90": 7.4666280012864336e-06,
+          "min": 7.4666280012864336e-06,
+          "max": 7.4666280012864336e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 50,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.4096498489379883e-05,
+          "median": 1.4096498489379883e-05,
+          "p90": 1.4096498489379883e-05,
+          "min": 1.4096498489379883e-05,
+          "max": 1.4096498489379883e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 51,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 5.22457636319674e-06,
+          "median": 5.22457636319674e-06,
+          "p90": 5.22457636319674e-06,
+          "min": 5.22457636319674e-06,
+          "max": 5.22457636319674e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 52,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 3.2045841217041015e-05,
+          "median": 3.2045841217041015e-05,
+          "p90": 3.2045841217041015e-05,
+          "min": 3.2045841217041015e-05,
+          "max": 3.2045841217041015e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 53,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.7757001130477242e-05,
+          "median": 1.7757001130477242e-05,
+          "p90": 1.7757001130477242e-05,
+          "min": 1.7757001130477242e-05,
+          "max": 1.7757001130477242e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 54,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 9.531066531226748e-06,
+          "median": 9.531066531226748e-06,
+          "p90": 9.531066531226748e-06,
+          "min": 9.531066531226748e-06,
+          "max": 9.531066531226748e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 55,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 3.325625469810084e-05,
+          "median": 3.325625469810084e-05,
+          "p90": 3.325625469810084e-05,
+          "min": 3.325625469810084e-05,
+          "max": 3.325625469810084e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 56,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.1622905731201172e-05,
+          "median": 1.1622905731201172e-05,
+          "p90": 1.1622905731201172e-05,
+          "min": 1.1622905731201172e-05,
+          "max": 1.1622905731201172e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 57,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.0432472229003907e-05,
+          "median": 2.0432472229003907e-05,
+          "p90": 2.0432472229003907e-05,
+          "min": 2.0432472229003907e-05,
+          "max": 2.0432472229003907e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 58,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 4.694717270987374e-05,
+          "median": 4.694717270987374e-05,
+          "p90": 4.694717270987374e-05,
+          "min": 4.694717270987374e-05,
+          "max": 4.694717270987374e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 59,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 4.153068249042217e-05,
+          "median": 4.153068249042217e-05,
+          "p90": 4.153068249042217e-05,
+          "min": 4.153068249042217e-05,
+          "max": 4.153068249042217e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 60,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.9480784734090168e-05,
+          "median": 1.9480784734090168e-05,
+          "p90": 1.9480784734090168e-05,
+          "min": 1.9480784734090168e-05,
+          "max": 1.9480784734090168e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 61,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.6786835410378195e-05,
+          "median": 1.6786835410378195e-05,
+          "p90": 1.6786835410378195e-05,
+          "min": 1.6786835410378195e-05,
+          "max": 1.6786835410378195e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 62,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.940131187438965e-05,
+          "median": 1.940131187438965e-05,
+          "p90": 1.940131187438965e-05,
+          "min": 1.940131187438965e-05,
+          "max": 1.940131187438965e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 63,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.1006991068522135e-05,
+          "median": 1.1006991068522135e-05,
+          "p90": 1.1006991068522135e-05,
+          "min": 1.1006991068522135e-05,
+          "max": 1.1006991068522135e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 64,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 4.105269908905029e-06,
+          "median": 4.105269908905029e-06,
+          "p90": 4.105269908905029e-06,
+          "min": 4.105269908905029e-06,
+          "max": 4.105269908905029e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 65,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 9.281294686453684e-06,
+          "median": 9.281294686453684e-06,
+          "p90": 9.281294686453684e-06,
+          "min": 9.281294686453684e-06,
+          "max": 9.281294686453684e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 66,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 8.434057235717773e-06,
+          "median": 8.434057235717773e-06,
+          "p90": 8.434057235717773e-06,
+          "min": 8.434057235717773e-06,
+          "max": 8.434057235717773e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 67,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.678466796875e-05,
+          "median": 1.678466796875e-05,
+          "p90": 1.678466796875e-05,
+          "min": 1.678466796875e-05,
+          "max": 1.678466796875e-05,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 68,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 3.4570693969726562e-06,
+          "median": 3.4570693969726562e-06,
+          "p90": 3.4570693969726562e-06,
+          "min": 3.4570693969726562e-06,
+          "max": 3.4570693969726562e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 69,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 1.4106432596842449e-06,
+          "median": 1.4106432596842449e-06,
+          "p90": 1.4106432596842449e-06,
+          "min": 1.4106432596842449e-06,
+          "max": 1.4106432596842449e-06,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 70,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 6.258487701416016e-07,
+          "median": 6.258487701416016e-07,
+          "p90": 6.258487701416016e-07,
+          "min": 6.258487701416016e-07,
+          "max": 6.258487701416016e-07,
+          "std": 0.0
+        }
+      },
+      {
+        "token_manhattan_distance": 71,
+        "pair_distance_bin_count": 1,
+        "feature_distance": {
+          "count": 1,
+          "mean": 2.5331974029541016e-05,
+          "median": 2.5331974029541016e-05,
+          "p90": 2.5331974029541016e-05,
+          "min": 2.5331974029541016e-05,
+          "max": 2.5331974029541016e-05,
+          "std": 0.0
+        }
+      }
+    ],
+    "decision_signals": {
+      "r_feature_over_r_pixel": {
+        "count": 1,
+        "mean": 1.7824933687002653,
+        "median": 1.7824933687002653,
+        "p90": 1.7824933687002653,
+        "min": 1.7824933687002653,
+        "max": 1.7824933687002653,
+        "std": 0.0
+      },
+      "unchanged_pixel_region_feature_distance_mean": {
+        "count": 1,
+        "mean": 0.00041852952002843644,
+        "median": 0.00041852952002843644,
+        "p90": 0.00041852952002843644,
+        "min": 0.00041852952002843644,
+        "max": 0.00041852952002843644,
+        "std": 0.0
+      },
+      "changed_pixel_region_feature_distance_mean": {
+        "count": 1,
+        "mean": 0.0014713406562805176,
+        "median": 0.0014713406562805176,
+        "p90": 0.0014713406562805176,
+        "min": 0.0014713406562805176,
+        "max": 0.0014713406562805176,
+        "std": 0.0
+      },
+      "threshold_row_count": 5
+    }
+  },
+  "plots": [
+    "results/feature_locality_analysis/androidcontrol_mini_broad_100/r_pixel_vs_r_feature.png",
+    "results/feature_locality_analysis/androidcontrol_mini_broad_100/r_pixel_r_feature_distribution.png",
+    "results/feature_locality_analysis/androidcontrol_mini_broad_100/feature_distance_by_changed_region_distance.png"
+  ],
+  "notes": [
+    "This is profiling/analysis only. It does not implement patch feature cache or train model weights.",
+    "R_pixel is computed from existing tile hash diff; R_feature is computed from corresponding visual-token distances.",
+    "Feature locality is favorable when R_feature stays near R_pixel and unchanged pixel regions have low feature distances."
+  ]
+}

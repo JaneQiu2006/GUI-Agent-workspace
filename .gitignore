@@ -16,6 +16,8 @@ huggingface/
 outputs/
 test_framework/outputs/
 # results/
+results/feature_locality_analysis/androidcontrol_1000_broad_100/visualizations
+results/feature_locality_analysis/androidcontrol_1000_broad_100_model_ready_visual/visualizations
 runs/
 logs/
 *.jsonl.tmp
