@@ -12,7 +12,7 @@ for path in (SCRIPT_DIR, TEST_FRAMEWORK):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from analyze_kv_locality import build_parser, kv_tensor_to_token_matrix, required_output_fields  # noqa: E402
+from analyze_kv_locality import build_parser, iter_kv_layers, kv_tensor_to_token_matrix, required_output_fields  # noqa: E402
 from analyze_visual_feature_locality import align_changed_tiles_to_tokens  # noqa: E402
 from hf_gui_baseline import infer_visual_token_positions  # noqa: E402
 
@@ -57,6 +57,17 @@ class KVLocalityHelpersTest(unittest.TestCase):
         self.assertEqual(tuple(kv_tensor_to_token_matrix(heads_seq, expected_seq_len=5).shape), (5, 6))
         self.assertEqual(tuple(kv_tensor_to_token_matrix(seq_heads, expected_seq_len=5).shape), (5, 6))
         self.assertEqual(tuple(kv_tensor_to_token_matrix(no_batch, expected_seq_len=5).shape), (5, 6))
+
+    def test_iter_kv_layers_supports_dynamic_cache_layers(self) -> None:
+        class FakeLayer:
+            def __init__(self, key: object, value: object) -> None:
+                self.keys = key
+                self.values = value
+
+        class FakeDynamicCache:
+            layers = [FakeLayer("k0", "v0"), FakeLayer("k1", "v1")]
+
+        self.assertEqual(list(iter_kv_layers(FakeDynamicCache())), [("k0", "v0"), ("k1", "v1")])
 
     def test_tile_mask_alignment_reuses_visual_locality_logic(self) -> None:
         mask = align_changed_tiles_to_tokens(

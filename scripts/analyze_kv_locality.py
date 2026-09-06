@@ -410,10 +410,37 @@ def analyze_scope(
 
 def iter_kv_layers(past_key_values: Any) -> Iterable[Tuple[Any, Any]]:
     if hasattr(past_key_values, "to_legacy_cache"):
-        past_key_values = past_key_values.to_legacy_cache()
+        try:
+            past_key_values = past_key_values.to_legacy_cache()
+        except Exception:
+            pass
     if hasattr(past_key_values, "key_cache") and hasattr(past_key_values, "value_cache"):
         yield from zip(past_key_values.key_cache, past_key_values.value_cache)
         return
+    if hasattr(past_key_values, "layers"):
+        for layer in past_key_values.layers:
+            key = getattr(layer, "keys", None)
+            value = getattr(layer, "values", None)
+            if key is None or value is None:
+                raise RuntimeError("Cache layer is missing keys or values tensor")
+            yield key, value
+        return
+    if hasattr(past_key_values, "__iter__") and not isinstance(past_key_values, (list, tuple, dict)):
+        yielded = False
+        for item in past_key_values:
+            if isinstance(item, dict):
+                key = item.get("key") if item.get("key") is not None else item.get("k")
+                value = item.get("value") if item.get("value") is not None else item.get("v")
+            elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                key, value = item[0], item[1]
+            else:
+                raise RuntimeError(f"Unsupported cache iterator item type: {type(item).__name__}")
+            if key is None or value is None:
+                raise RuntimeError("Cache iterator item is missing key or value tensor")
+            yielded = True
+            yield key, value
+        if yielded:
+            return
     if not isinstance(past_key_values, (list, tuple)):
         raise RuntimeError(f"Unsupported past_key_values type: {type(past_key_values).__name__}")
     for layer in past_key_values:

@@ -1333,6 +1333,14 @@ def _detach_past_key_values_to_cpu(past_key_values: Any) -> Any:
             past_key_values = past_key_values.to_legacy_cache()
         except Exception:
             pass
+    if hasattr(past_key_values, "layers"):
+        return tuple(
+            (
+                _detach_tensor_to_cpu(key),
+                _detach_tensor_to_cpu(value),
+            )
+            for key, value in _iter_cache_layers(past_key_values)
+        )
     if not isinstance(past_key_values, (list, tuple)):
         return past_key_values
     detached_layers = []
@@ -1369,6 +1377,15 @@ def _past_key_values_shapes(past_key_values: Any) -> List[Dict[str, Any]]:
             layers = layers.to_legacy_cache()
         except Exception:
             pass
+    if hasattr(layers, "layers"):
+        return [
+            {
+                "layer_id": layer_id,
+                "key_shape": _shape_list(key),
+                "value_shape": _shape_list(value),
+            }
+            for layer_id, (key, value) in enumerate(_iter_cache_layers(layers))
+        ]
     if not isinstance(layers, (list, tuple)):
         return []
     result = []
@@ -1387,6 +1404,29 @@ def _past_key_values_shapes(past_key_values: Any) -> List[Dict[str, Any]]:
             }
         )
     return result
+
+
+def _iter_cache_layers(cache: Any) -> Iterator[Tuple[Any, Any]]:
+    layer_list = getattr(cache, "layers", None)
+    if layer_list is not None:
+        for layer in layer_list:
+            key = getattr(layer, "keys", None)
+            value = getattr(layer, "values", None)
+            if key is not None and value is not None:
+                yield key, value
+        return
+    if not hasattr(cache, "__iter__"):
+        return
+    for item in cache:
+        if isinstance(item, Mapping):
+            key = item.get("key") if item.get("key") is not None else item.get("k")
+            value = item.get("value") if item.get("value") is not None else item.get("v")
+        elif isinstance(item, (list, tuple)) and len(item) >= 2:
+            key, value = item[0], item[1]
+        else:
+            continue
+        if key is not None and value is not None:
+            yield key, value
 
 
 def _shape_list(value: Any) -> Optional[List[int]]:
