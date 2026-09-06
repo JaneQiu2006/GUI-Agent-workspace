@@ -32,6 +32,7 @@ from cache_inference import PAGE_CACHE_SCOPES, PAGE_CACHE_SIMILARITIES, PageCach
 from eval_androidcontrol import load_samples, resolved_image_path  # noqa: E402
 from hf_gui_baseline import (  # noqa: E402
     DEFAULT_MODEL_PATH,
+    VISUAL_FEATURE_BOUNDARIES,
     VISION_TOKEN_MODES,
     extract_visual_features,
     load_model_and_processor,
@@ -92,7 +93,14 @@ def build_parser() -> argparse.ArgumentParser:
         default="final",
         help="Comma-separated visual feature layer ids. 'final' is the supported default; integer ids are best effort.",
     )
+    parser.add_argument(
+        "--feature_boundary",
+        default="vision_final",
+        choices=VISUAL_FEATURE_BOUNDARIES,
+        help="Feature extraction boundary: vision_final/visual_patch_features for visual-module output, or model_ready_visual/projected_visual/merged_visual for projector/merger output.",
+    )
     parser.add_argument("--vision_module_path", help="Optional model module path, e.g. visual")
+    parser.add_argument("--projector_module_path", help="Optional projector/merger module path, e.g. model.visual.merger")
     parser.add_argument("--page_cache_scope", default="trajectory", choices=PAGE_CACHE_SCOPES)
     parser.add_argument("--page_cache_similarity", default="tile", choices=PAGE_CACHE_SIMILARITIES)
     parser.add_argument("--page_cache_near_dhash_threshold", type=int, default=4)
@@ -186,7 +194,9 @@ def main() -> int:
             "feature_metric": args.feature_metric,
             "feature_thresholds": list(thresholds),
             "feature_layers": list(feature_layers),
+            "feature_boundary": args.feature_boundary,
             "vision_module_path": args.vision_module_path,
+            "projector_module_path": args.projector_module_path,
             "page_cache_config": config.to_dict(),
             "similar_hit_types": list(similar_hit_types(args)),
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -197,6 +207,7 @@ def main() -> int:
             "This is profiling/analysis only. It does not implement patch feature cache or train model weights.",
             "R_pixel is computed from existing tile hash diff; R_feature is computed from corresponding visual-token distances.",
             "Feature locality is favorable when R_feature stays near R_pixel and unchanged pixel regions have low feature distances.",
+            "For model_ready_visual/projected_visual/merged_visual, changed tiles are aligned to the processor merge-size-reduced visual token grid.",
         ],
     }
     write_json(run_dir / "summary.json", output)
@@ -247,6 +258,8 @@ def analyze_pair(
                 max_pixels=args.max_pixels,
                 layer_id=layer_id,
                 vision_module_path=args.vision_module_path,
+                feature_boundary=args.feature_boundary,
+                projector_module_path=args.projector_module_path,
             )
             cur_features = extract_visual_features(
                 model,
@@ -259,10 +272,13 @@ def analyze_pair(
                 max_pixels=args.max_pixels,
                 layer_id=layer_id,
                 vision_module_path=args.vision_module_path,
+                feature_boundary=args.feature_boundary,
+                projector_module_path=args.projector_module_path,
             )
             cosine, relative_l2 = feature_distances(prev_features.features, cur_features.features)
             token_count = int(cosine.shape[0])
-            token_grid = infer_token_grid(cur_features.profile_metadata, token_count)
+            alignment = infer_token_grid_details(cur_features.profile_metadata, token_count, args.feature_boundary)
+            token_grid = alignment["visual_token_grid"]
             changed_token_mask = align_changed_tiles_to_tokens(
                 pair.similarity.changed_tile_mask,
                 pair.similarity.total_tile_count,
@@ -290,6 +306,12 @@ def analyze_pair(
                 result = {
                     "pair_id": pair.pair_id,
                     "layer_id": layer_id,
+                    "feature_boundary": cur_features.feature_boundary,
+                    "feature_source": cur_features.feature_source,
+                    "feature_token_count": token_count,
+                    "visual_token_grid": list(token_grid) if token_grid else None,
+                    "processor_merge_size": alignment["processor_merge_size"],
+                    "alignment_method": alignment["alignment_method"],
                     "threshold": tau,
                     "feature_metric": args.feature_metric,
                     "feature_changed_ratio": changed_ratio,
@@ -305,13 +327,17 @@ def analyze_pair(
             row = base_pair_row(pair, layer_id, pixel_changed_ratio, token_count)
             row.update(
                 {
+                    "feature_boundary": cur_features.feature_boundary,
                     "feature_source": cur_features.feature_source,
+                    "feature_token_count": token_count,
                     "feature_metric": args.feature_metric,
                     "threshold": primary_tau,
                     "feature_changed_ratio": threshold_results[0]["feature_changed_ratio"] if threshold_results else None,
                     "feature_threshold_results": threshold_results,
                     "visual_token_count": token_count,
                     "visual_token_grid": list(token_grid) if token_grid else None,
+                    "processor_merge_size": alignment["processor_merge_size"],
+                    "alignment_method": alignment["alignment_method"],
                     "prev_profile_metadata": prev_features.profile_metadata,
                     "cur_profile_metadata": cur_features.profile_metadata,
                     "feature_distance_stats": {
@@ -342,11 +368,15 @@ def analyze_pair(
                     {
                         "pair_id": pair.pair_id,
                         "layer_id": layer_id,
+                        "feature_boundary": cur_features.feature_boundary,
+                        "visual_token_grid": list(token_grid) if token_grid else None,
+                        "alignment_method": alignment["alignment_method"],
                         **distance_item,
                     }
                 )
         except Exception as exc:
             row = base_pair_row(pair, layer_id, pixel_changed_ratio, 0)
+            row["feature_boundary"] = args.feature_boundary
             row["error"] = f"{type(exc).__name__}: {exc}"
             rows.append(row)
     return rows, distance_rows, threshold_rows
@@ -522,22 +552,48 @@ def align_changed_tiles_to_tokens(
 
 
 def infer_token_grid(metadata: Dict[str, Any], token_count: int) -> Optional[Tuple[int, int]]:
+    return infer_token_grid_details(metadata, token_count).get("visual_token_grid")
+
+
+def infer_token_grid_details(
+    metadata: Dict[str, Any],
+    token_count: int,
+    feature_boundary: str = "vision_final",
+) -> Dict[str, Any]:
     grids = metadata.get("image_grid_thw") or []
     merge_size = int(metadata.get("processor_merge_size") or 1)
+    result = {
+        "visual_token_grid": None,
+        "processor_merge_size": merge_size,
+        "alignment_method": "squareish_grid_fallback",
+    }
     if len(grids) != 1:
-        return squareish_grid(token_count)
+        result["visual_token_grid"] = squareish_grid(token_count)
+        return result
     grid = grids[0]
     if not isinstance(grid, (list, tuple)) or len(grid) < 3:
-        return squareish_grid(token_count)
+        result["visual_token_grid"] = squareish_grid(token_count)
+        return result
     t, h, w = int(grid[0]), int(grid[1]), int(grid[2])
-    candidates = []
-    if merge_size > 1:
-        candidates.append((max(1, t * (h // merge_size)), max(1, w // merge_size)))
-    candidates.append((max(1, t * h), max(1, w)))
-    for rows, cols in candidates:
+    patch_grid = (max(1, t * h), max(1, w))
+    merged_grid = (
+        max(1, t * math.ceil(h / max(1, merge_size))),
+        max(1, math.ceil(w / max(1, merge_size))),
+    )
+    ordered_candidates = []
+    if feature_boundary in {"merged_visual", "projected_visual", "model_ready_visual"}:
+        ordered_candidates.append((merged_grid, "tile_mask_center_sample_to_merged_visual_token_grid"))
+        ordered_candidates.append((patch_grid, "tile_mask_center_sample_to_patch_visual_token_grid"))
+    else:
+        ordered_candidates.append((patch_grid, "tile_mask_center_sample_to_patch_visual_token_grid"))
+        ordered_candidates.append((merged_grid, "tile_mask_center_sample_to_merged_visual_token_grid"))
+    for (rows, cols), method in ordered_candidates:
         if rows * cols == token_count:
-            return rows, cols
-    return squareish_grid(token_count)
+            result["visual_token_grid"] = (rows, cols)
+            result["alignment_method"] = method
+            return result
+    result["visual_token_grid"] = squareish_grid(token_count)
+    return result
 
 
 def squareish_grid(token_count: int) -> Optional[Tuple[int, int]]:
@@ -773,6 +829,7 @@ def aggregate_results(
         "by_page_similarity_bin": summarize_similarity_bins(valid_thresholds),
         "grouped_stats": grouped_stats(valid_thresholds),
         "by_layer": grouped_by(valid_thresholds, "layer_id"),
+        "by_feature_boundary": grouped_by(valid_thresholds, "feature_boundary"),
         "distance_to_changed_region": summarize_distance_rows(distance_rows, feature_metric),
         "decision_signals": build_decision_signals(valid_rows, valid_thresholds, feature_metric),
     }
@@ -798,15 +855,16 @@ def grouped_stats(rows: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def grouped_by(rows: Sequence[Dict[str, Any]], key: str) -> List[Dict[str, Any]]:
-    groups: Dict[Tuple[str, str, str], List[Dict[str, Any]]] = {}
+    groups: Dict[Tuple[str, str, str, str], List[Dict[str, Any]]] = {}
     for row in rows:
         value = str(row.get(key) or "unknown")
+        feature_boundary = str(row.get("feature_boundary") or "unknown")
         layer_id = str(row.get("layer_id") or "unknown")
         threshold = str(row.get("threshold") or "unknown")
-        groups.setdefault((value, layer_id, threshold), []).append(row)
+        groups.setdefault((value, feature_boundary, layer_id, threshold), []).append(row)
     return [
-        summary_row(key, value, selected, layer_id=layer_id, threshold=threshold)
-        for (value, layer_id, threshold), selected in sorted(groups.items())
+        summary_row(key, value, selected, feature_boundary=feature_boundary, layer_id=layer_id, threshold=threshold)
+        for (value, feature_boundary, layer_id, threshold), selected in sorted(groups.items())
     ]
 
 
@@ -814,12 +872,14 @@ def summary_row(
     dimension: str,
     value: str,
     rows: Sequence[Dict[str, Any]],
+    feature_boundary: Optional[str] = None,
     layer_id: Optional[str] = None,
     threshold: Optional[str] = None,
 ) -> Dict[str, Any]:
     return {
         "dimension": dimension,
         "value": value,
+        "feature_boundary": feature_boundary,
         "layer_id": layer_id,
         "threshold": threshold,
         "feature_metric": rows[0].get("feature_metric") if rows else None,
@@ -922,6 +982,7 @@ def flatten_pair_rows(rows: Sequence[Dict[str, Any]], feature_metric: str) -> Li
             {
                 "pair_id": row.get("pair_id"),
                 "layer_id": row.get("layer_id"),
+                "feature_boundary": row.get("feature_boundary"),
                 "episode_id": row.get("episode_id"),
                 "step_id": row.get("step_id"),
                 "app": row.get("app"),
@@ -930,7 +991,12 @@ def flatten_pair_rows(rows: Sequence[Dict[str, Any]], feature_metric: str) -> Li
                 "feature_metric": row.get("feature_metric"),
                 "threshold": row.get("threshold"),
                 "feature_changed_ratio": row.get("feature_changed_ratio"),
+                "feature_source": row.get("feature_source"),
+                "feature_token_count": row.get("feature_token_count"),
                 "visual_token_count": row.get("visual_token_count"),
+                "visual_token_grid": row.get("visual_token_grid"),
+                "processor_merge_size": row.get("processor_merge_size"),
+                "alignment_method": row.get("alignment_method"),
                 "page_tile_unchanged_ratio": (row.get("page_similarity") or {}).get("tile_unchanged_ratio"),
                 "changed_region_feature_mean": changed.get("mean"),
                 "unchanged_region_feature_mean": unchanged.get("mean"),

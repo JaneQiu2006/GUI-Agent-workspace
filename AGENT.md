@@ -298,6 +298,22 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
 - `profile_androidcontrol.py` / `profile_single_image.py` 输出新增 `summary.fine_grained_profile`，包含 per-step、per-episode、overall 的 mean / median / P90。
 - GPU stage 计时会在可见 CUDA device 上 synchronize，避免异步执行低估耗时。
 - 视觉 encoder / projector 计时使用临时 forward hook，只在 profiling 路径启用；未匹配模型模块时对应字段为 `null`，不强行拆分。
+- 已新增 `scripts/analyze_visual_feature_locality.py`，用于分析 similar GUI pages 的局部 pixel patch 变化在 vision encoder feature space 中是否保持局部。
+- 已新增 `hf_gui_baseline.extract_visual_features()`，作为后续 `cached feature + changed patch recomputation + feature replacement` 的清晰预留接口；当前只做 feature extraction / analysis，不训练、不改权重、不实现真实 feature cache。
+
+Visual Feature Locality 当前结果：
+
+- 结果目录：`results/feature_locality_analysis/androidcontrol_1000_broad_100`。
+- 数据：`data/androidcontrol_1000/test.json`，`max_pairs=100`，`page_cache_scope=dataset`，`visual_token_mode=aggressive_reduce`。
+- 100 个 pair 全部有效，`error_count=0`；feature source 自动解析为 `model.visual`。
+- hit type：`patch_candidate=55`，`near=45`。
+- 平均 `R_pixel=0.0611`，median `0.0547`，p90 `0.1180`。
+- `tau=0.01` 下平均 `R_feature=0.0205`，median `0.0146`，p90 `0.0513`；`R_pixel` 与 `R_feature` Pearson correlation 为 `0.667`。
+- `tau=0.01` 下仅 `2 / 100` 个 pair 出现 `R_feature > R_pixel`；`tau>=0.03` 下为 `0 / 100`。
+- changed pixel patch tokens 的 mean cosine distance 为 `0.002154`，unchanged pixel patch tokens 为 `0.000753`，约 `2.86x`；`79 / 100` 个 pair 的 changed 区域 feature mean 高于 unchanged 区域。
+- 距 changed region 的空间距离越远，feature distance 总体下降；未观察到大面积 feature 扩散。
+- 当前结论：100-pair 结果支持 Patch Feature Cache 可行性，建议把 `tau=0.01` 作为主观察阈值之一。
+- 当前限制：只分析 `model.visual` final 输出；多数 `feature_token_count=1508`，而 merged visual token 估算为 `377`，尚未确认 projector / merger 后 model-ready visual embeddings 的 locality；尚未比较 intermediate layers。
 
 `--generation_profile_mode manual_greedy` 已用于暴露 `prefill_seconds`、`ttft_seconds`、逐 token decode 统计和 multimodal prefill 占比。该路径只用于 profiling/实验，当前限制：
 
@@ -321,6 +337,35 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
 ```
 
 如果继续做 full-prefix KV cache，应先基于 exact same prefix 的单图重复输入验证 `past_key_values`、position ids/cache position 和 decode trimming；不要对 near/patch 页面做 KV 复用。
+
+Visual Feature Locality 复现实验命令：
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_1000/test.json \
+  --data_dir data/androidcontrol_1000 \
+  --output_dir results/feature_locality_analysis \
+  --run_name androidcontrol_1000_broad_100 \
+  --max_pairs 100 \
+  --visual_token_mode aggressive_reduce \
+  --page_cache_scope dataset \
+  --page_cache_similarity tile \
+  --page_cache_near_dhash_threshold 8 \
+  --page_cache_near_tile_threshold 0.95 \
+  --page_cache_patch_tile_threshold 0.85 \
+  --page_cache_patch_max_changed_area_ratio 0.35 \
+  --similar_hit_type near \
+  --similar_hit_type patch_candidate \
+  --feature_metric cosine_distance \
+  --feature_threshold 0.005 \
+  --feature_threshold 0.01 \
+  --feature_threshold 0.03 \
+  --feature_threshold 0.05 \
+  --feature_threshold 0.10
+```
+
+详细分析见 `docs/2026-09-06_visual_feature_locality_analysis.md`。
 
 ## 远端常用命令
 
@@ -434,6 +479,10 @@ CUDA_VISIBLE_DEVICES=4,5 python scripts/profile_androidcontrol.py \
 - `docs/2026-08-29_androidcontrol_calibration_rerun_analysis.md`
 - `docs/2026-08-29_inference_acceleration_experiment_plan.md`
 - `docs/2026-08-30_inference_acceleration_results_analysis.md`
+- `docs/2026-08-31_cache_inference_architecture_design.md`
+- `docs/2026-09-01_androidworld_cache_benchmark.md`
+- `docs/2026-09-01_cache_extension_comparison_analysis.md`
+- `docs/2026-09-06_visual_feature_locality_analysis.md`
 
 
 

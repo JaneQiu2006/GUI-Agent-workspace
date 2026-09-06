@@ -70,14 +70,50 @@ VISION_ENCODER_MODULE_BASENAMES = tuple(
 )
 VISION_PROJECTOR_HOOK_NAMES = (
     "visual.merger",
+    "model.visual.merger",
+    "base_model.visual.merger",
+    "module.visual.merger",
     "multi_modal_projector",
+    "model.multi_modal_projector",
+    "base_model.multi_modal_projector",
+    "module.multi_modal_projector",
     "multimodal_projector",
+    "model.multimodal_projector",
+    "base_model.multimodal_projector",
+    "module.multimodal_projector",
     "mm_projector",
+    "model.mm_projector",
+    "base_model.mm_projector",
+    "module.mm_projector",
     "vision_projector",
+    "model.vision_projector",
+    "base_model.vision_projector",
+    "module.vision_projector",
     "visual_projection",
+    "model.visual_projection",
+    "base_model.visual_projection",
+    "module.visual_projection",
     "vision_projection",
+    "model.vision_projection",
+    "base_model.vision_projection",
+    "module.vision_projection",
     "visual.adapter",
+    "model.visual.adapter",
+    "base_model.visual.adapter",
+    "module.visual.adapter",
 )
+VISION_PROJECTOR_MODULE_BASENAMES = tuple(
+    dict.fromkeys(path.split(".")[-1] for path in VISION_PROJECTOR_HOOK_NAMES)
+)
+VISUAL_FEATURE_BOUNDARIES = (
+    "vision_final",
+    "visual_patch_features",
+    "merged_visual",
+    "projected_visual",
+    "model_ready_visual",
+)
+VISUAL_PATCH_FEATURE_BOUNDARIES = {"vision_final", "visual_patch_features"}
+MODEL_READY_VISUAL_FEATURE_BOUNDARIES = {"merged_visual", "projected_visual", "model_ready_visual"}
 InferItem = Tuple[Path, str, Optional[List[Dict[str, Any]]], Optional[Any], Optional[str]]
 
 
@@ -108,6 +144,7 @@ class GuiProfiledInferenceResult(GuiInferenceResult):
 class VisualFeatureExtractionResult:
     features: Any
     feature_source: str
+    feature_boundary: str
     layer_id: str
     prompt: str
     input_tokens: int
@@ -391,6 +428,8 @@ def extract_visual_features(
     action_hint: Optional[str] = None,
     layer_id: str = "final",
     vision_module_path: Optional[str] = None,
+    feature_boundary: str = "vision_final",
+    projector_module_path: Optional[str] = None,
 ) -> VisualFeatureExtractionResult:
     """Run only the vision path and return per-token visual features.
 
@@ -398,6 +437,9 @@ def extract_visual_features(
     and intentionally avoids language generation.
     """
     import torch
+
+    if feature_boundary not in VISUAL_FEATURE_BOUNDARIES:
+        raise ValueError(f"Unsupported feature_boundary: {feature_boundary}")
 
     messages, prompt = build_gui_messages(
         image_path,
@@ -419,24 +461,37 @@ def extract_visual_features(
         return_tensors="pt",
     )
     input_tokens = int(inputs.input_ids.shape[-1]) if hasattr(inputs, "input_ids") else 0
-    visual_module, resolved_module_path = _resolve_visual_module(model, vision_module_path)
-    if visual_module is None:
-        raise RuntimeError("No supported visual module found on model")
-    target_device = (
-        _input_device(model, device)
-        if device != "auto"
-        else (_module_device(visual_module) or _input_device(model, device))
-    )
+    visual_module = None
+    resolved_module_path = ""
+    if feature_boundary in VISUAL_PATCH_FEATURE_BOUNDARIES:
+        visual_module, resolved_module_path = _resolve_visual_module(model, vision_module_path)
+        if visual_module is None:
+            raise RuntimeError("No supported visual module found on model")
+    target_device = _input_device(model, device)
+    if device == "auto" and visual_module is not None:
+        target_device = _module_device(visual_module) or target_device
     if hasattr(inputs, "to") and target_device is not None:
         inputs = inputs.to(target_device)
 
     input_dict = _as_input_dict(inputs)
-    with torch.inference_mode():
-        visual_output = _call_visual_module_for_features(
-            visual_module,
+    if feature_boundary in VISUAL_PATCH_FEATURE_BOUNDARIES:
+        with torch.inference_mode():
+            visual_output = _call_visual_module_for_features(
+                visual_module,
+                input_dict,
+                layer_id=layer_id,
+            )
+        feature_source = resolved_module_path
+    elif feature_boundary in MODEL_READY_VISUAL_FEATURE_BOUNDARIES:
+        visual_output, feature_source = _extract_projected_visual_output(
+            model,
             input_dict,
+            torch,
             layer_id=layer_id,
+            projector_module_path=projector_module_path,
         )
+    else:
+        raise ValueError(f"Unsupported feature_boundary: {feature_boundary}")
     features = _visual_feature_tensor(visual_output, layer_id=layer_id)
     if features is None:
         raise RuntimeError(f"Could not extract tensor features from visual output for layer_id={layer_id!r}")
@@ -451,9 +506,11 @@ def extract_visual_features(
     metadata["feature_dim"] = int(features.shape[-1]) if len(features.shape) >= 2 else None
     metadata["feature_token_count"] = int(features.shape[0]) if len(features.shape) >= 1 else None
     metadata["processor_merge_size"] = _processor_merge_size(processor)
+    metadata["feature_boundary"] = feature_boundary
     return VisualFeatureExtractionResult(
         features=features,
-        feature_source=resolved_module_path,
+        feature_source=feature_source,
+        feature_boundary=feature_boundary,
         layer_id=layer_id,
         prompt=prompt,
         input_tokens=input_tokens,
@@ -845,6 +902,28 @@ def _resolve_visual_module(model: Any, module_path: Optional[str] = None) -> Tup
     return None, ""
 
 
+def _resolve_projector_module(model: Any, module_path: Optional[str] = None) -> Tuple[Optional[Any], str]:
+    if module_path:
+        module = _get_module_by_path(model, module_path)
+        return module, module_path
+    for name in VISION_PROJECTOR_HOOK_NAMES:
+        module = _get_module_by_path(model, name)
+        if module is not None:
+            return module, name
+    if hasattr(model, "named_modules"):
+        for name, module in model.named_modules():
+            name_text = str(name)
+            lowered = name_text.lower()
+            basename = name_text.split(".")[-1]
+            likely_visual_path = any(
+                marker in lowered
+                for marker in ("visual", "vision", "projector", "merger", "mm", "multimodal")
+            )
+            if basename in VISION_PROJECTOR_MODULE_BASENAMES and likely_visual_path and module is not model:
+                return module, name_text
+    return None, ""
+
+
 def _module_device(module: Any) -> Optional[Any]:
     try:
         return next(module.parameters()).device
@@ -886,6 +965,51 @@ def _call_visual_module_for_features(visual_module: Any, inputs: Dict[str, Any],
             raise
     joined = "; ".join(errors[-3:])
     raise RuntimeError(f"Unable to call visual module for feature extraction: {joined}")
+
+
+def _extract_projected_visual_output(
+    model: Any,
+    inputs: Dict[str, Any],
+    torch: Any,
+    layer_id: str = "final",
+    projector_module_path: Optional[str] = None,
+) -> Tuple[Any, str]:
+    if str(layer_id or "final") not in {"final", "last"}:
+        raise RuntimeError("model-ready visual feature extraction only supports final projector/merger output")
+    projector_module, resolved_path = _resolve_projector_module(model, projector_module_path)
+    if projector_module is None:
+        raise RuntimeError("No supported visual projector/merger module found on model")
+    captured: Dict[str, Any] = {}
+
+    def hook(_module: Any, _inputs: Any, output: Any) -> None:
+        captured["output"] = output
+
+    handle = projector_module.register_forward_hook(hook)
+    try:
+        with torch.inference_mode():
+            _forward_for_feature_capture(model, inputs)
+    finally:
+        handle.remove()
+    if "output" not in captured:
+        raise RuntimeError(f"Projector/merger hook did not capture output for {resolved_path}")
+    return captured["output"], resolved_path
+
+
+def _forward_for_feature_capture(model: Any, inputs: Dict[str, Any]) -> Any:
+    candidate_kwargs = [
+        {**inputs, "use_cache": False, "return_dict": True},
+        {**inputs, "return_dict": True},
+        {**inputs, "use_cache": False},
+        dict(inputs),
+    ]
+    errors = []
+    for kwargs in candidate_kwargs:
+        try:
+            return model(**kwargs)
+        except TypeError as exc:
+            errors.append(str(exc))
+    joined = "; ".join(errors[-3:])
+    raise RuntimeError(f"Unable to run model forward for visual feature capture: {joined}")
 
 
 def _visual_feature_tensor(output: Any, layer_id: str = "final") -> Optional[Any]:

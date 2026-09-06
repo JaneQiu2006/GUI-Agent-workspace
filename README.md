@@ -241,6 +241,39 @@ attention mask plus Qwen rope deltas when available, and clears image pixel
 tensors so Qwen3.5 VL-style models do not reuse prefix-length position tensors
 during single-token decode.
 
+Visual feature locality analysis for Patch Feature Cache feasibility:
+
+```bash
+CUDA_VISIBLE_DEVICES=4,5 python scripts/analyze_visual_feature_locality.py \
+  --model_path /data2/home/models/Qwen3.8-27B \
+  --test_json data/androidcontrol_1000/test.json \
+  --data_dir data/androidcontrol_1000 \
+  --output_dir results/feature_locality_analysis \
+  --run_name androidcontrol_1000_broad_100 \
+  --max_pairs 100 \
+  --visual_token_mode aggressive_reduce \
+  --page_cache_scope dataset \
+  --page_cache_similarity tile \
+  --page_cache_near_dhash_threshold 8 \
+  --page_cache_near_tile_threshold 0.95 \
+  --page_cache_patch_tile_threshold 0.85 \
+  --page_cache_patch_max_changed_area_ratio 0.35 \
+  --similar_hit_type near \
+  --similar_hit_type patch_candidate \
+  --feature_metric cosine_distance \
+  --feature_threshold 0.005 \
+  --feature_threshold 0.01 \
+  --feature_threshold 0.03 \
+  --feature_threshold 0.05 \
+  --feature_threshold 0.10
+```
+
+The locality script writes `summary.json`, `per_pair.jsonl`,
+`per_pair_summary.csv`, `threshold_stats.csv`, `grouped_stats.csv`,
+`distance_profiles.csv`, and optional plots under the selected output
+directory.  See `docs/2026-09-06_visual_feature_locality_analysis.md` for the
+current 100-pair result interpretation.
+
 ## Acceleration Experiments
 
 Run the full experiment matrix from the repository root on Jupiter:
