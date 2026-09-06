@@ -1,0 +1,116 @@
+{
+  "config": {
+    "model_path": "/data2/home/models/Qwen3.8-27B",
+    "test_json": "data/androidcontrol_1000/test.json",
+    "data_dir": "data/androidcontrol_1000",
+    "prev_image": null,
+    "cur_image": null,
+    "instruction": "Analyze the GUI screenshot.",
+    "output_dir": "results/kv_locality_analysis/androidcontrol_1000_broad_100_prefill_kv",
+    "limit": null,
+    "max_pairs": 100,
+    "device": "auto",
+    "device_map": "auto",
+    "dtype": "auto",
+    "attn_implementation": null,
+    "visual_token_mode": "aggressive_reduce",
+    "min_pixels": null,
+    "max_pixels": null,
+    "kv_metric": "cosine_distance",
+    "kv_thresholds": [
+      0.005,
+      0.01,
+      0.03,
+      0.05,
+      0.1
+    ],
+    "kv_scopes": [
+      "visual_tokens",
+      "text_tokens"
+    ],
+    "kv_kinds": [
+      "key",
+      "value"
+    ],
+    "kv_layers": "all",
+    "kv_boundary": "prefill_past_key_values",
+    "page_cache_config": {
+      "mode": "observe",
+      "scope": "dataset",
+      "similarity": "tile",
+      "max_entries": 1,
+      "near_dhash_threshold": 8,
+      "patch_tile_threshold": 0.85,
+      "patch_max_changed_area_ratio": 0.35,
+      "patch_critical_regions": [],
+      "near_tile_threshold": 0.95,
+      "tile_rows": 8,
+      "tile_cols": 16,
+      "ignored_top_ratio": 0.0,
+      "ignored_bottom_ratio": 0.0,
+      "identity": "kv-locality"
+    },
+    "similar_hit_types": [
+      "near",
+      "patch_candidate"
+    ],
+    "created_at": "2026-09-06T05:48:34.299584+00:00"
+  },
+  "summary": {
+    "pair_scope_layer_kind_rows": 400,
+    "valid_pair_scope_layer_kind_rows": 0,
+    "error_count": 400,
+    "r_pixel_distribution": {
+      "count": 0
+    },
+    "r_kv_by_threshold": {
+      "0.005": {
+        "count": 0
+      },
+      "0.01": {
+        "count": 0
+      },
+      "0.03": {
+        "count": 0
+      },
+      "0.05": {
+        "count": 0
+      },
+      "0.1": {
+        "count": 0
+      }
+    },
+    "r_pixel_r_kv_correlation_by_threshold": {
+      "0.005": null,
+      "0.01": null,
+      "0.03": null,
+      "0.05": null,
+      "0.1": null
+    },
+    "by_layer": [],
+    "by_kv_kind": [],
+    "by_kv_scope": [],
+    "grouped_stats": [],
+    "distance_to_changed_region": [],
+    "decision_signals": {
+      "r_kv_over_r_pixel": {
+        "count": 0
+      },
+      "changed_visual_region_kv_distance_mean": {
+        "count": 0
+      },
+      "unchanged_visual_region_kv_distance_mean": {
+        "count": 0
+      },
+      "threshold_row_count": 0,
+      "interpretation_hint": "If R_kv approaches 1 in deeper layers or unchanged-region distances approach changed-region distances, patch/local KV reuse is not supported."
+    }
+  },
+  "plots": [],
+  "notes": [
+    "This is profiling/analysis only. It does not implement patch KV cache, train weights, or modify model weights.",
+    "KV tensors are per-LLM-layer past_key_values, not visual embeddings.",
+    "Visual token positions are inferred from input_ids matching tokenizer image_token_id/vision_token_id; failures are reported per pair.",
+    "Patch-local KV reuse is favorable only if R_kv stays near R_pixel and unchanged visual regions keep low KV distance across deeper layers."
+  ]
+}
